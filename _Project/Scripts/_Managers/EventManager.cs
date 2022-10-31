@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using UnityEngine;
 
@@ -37,7 +38,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public event Action<Vector3Int> OnPlayerMove;
 
 		// General Unit Events, possibly need to add unique id to each unit
-		public event Action<IUnit, IUnit> OnAttack;
+		public event Action<IUnit, List<Vector3Int>> OnAttack;
 		public event Action<IItem> OnPickup;
 		public event Action OnUpdateInventory;
 		public event Action<Vector3Int> OnUnitMove;
@@ -97,9 +98,9 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			OnUnitAction?.Invoke(unit);
 		}
 
-		public void InvokeAttack(IUnit source, IUnit target)
+		public void InvokeAttack(IUnit source, List<Vector3Int> targetCells)
 		{
-			OnAttack?.Invoke(source, target);
+			OnAttack?.Invoke(source, targetCells);
 		}
 
 		public void InvokePickup(IItem item)

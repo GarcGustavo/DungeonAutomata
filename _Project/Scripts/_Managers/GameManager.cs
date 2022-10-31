@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Cinemachine;
+using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts.GridComponents;
 using DungeonAutomata._Project.Scripts.Utilities;
 using Sirenix.OdinInspector;

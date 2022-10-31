@@ -8,7 +8,7 @@ using UnityEngine;
 namespace DungeonAutomata._Project.Scripts.GridComponents
 {
 	[RequireComponent(typeof(GridController2D))]
-	public class PlayerUnit : MonoBehaviour, IUnit
+	public class PlayerUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
 		[SerializeField] private PlayerData playerData;
 		private InventoryManager _inventory;
@@ -19,10 +19,10 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public Vector3Int CurrentTile { get; set; }
 		private GridController2D _controller;
 		public string UnitName { get; set; }
-		public int MaxHealth { get; set; }
-		public int CurrentHealth { get; set; }
-		public int MaxMp { get; set; }
-		public int CurrentMp { get; set; }
+		public int MaxHP { get; set; }
+		public int CurrentHP { get; set; }
+		public int MaxMP { get; set; }
+		public int CurrentMP { get; set; }
 		public int MaxEnergy { get; set; }
 		public int CurrentEnergy { get; set; }
 		public int Hunger { get; set; }
@@ -53,10 +53,10 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void InitializeUnit()
 		{
-			MaxHealth = playerData.Health;
-			CurrentHealth = MaxHealth;
-			MaxMp = playerData.Mp;
-			CurrentMp = playerData.Mp;
+			MaxHP = playerData.Health;
+			CurrentHP = MaxHP;
+			MaxMP = playerData.Mp;
+			CurrentMP = playerData.Mp;
 			MaxEnergy = playerData.Energy;
 			CurrentEnergy = MaxEnergy;
 			
@@ -87,9 +87,10 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Damage(int dmg)
 		{
-			CurrentHealth -= dmg;
+			Debug.Log("Player took " + dmg + " damage!");
+			CurrentHP -= dmg;
 			_eventManager.OnPlayerDamaged -= Damage;
-			if (CurrentHealth <= 0)
+			if (CurrentHP <= 0)
 			{
 				Die();
 			}

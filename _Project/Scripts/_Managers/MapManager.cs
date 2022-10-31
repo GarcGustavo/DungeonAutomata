@@ -60,6 +60,20 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			//_eventManager.OnStartGame += SpawnPlayer;
 			_gridMap = new CellData[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
 			_eventManager.OnUnitAction += CheckUnitsToMove;
+			_eventManager.OnAttack += DamageCells;
+		}
+
+		//Move to combat manager later
+		private void DamageCells(IUnit sourceUnit, List<Vector3Int> cells)
+		{
+			foreach (var cell in cells)
+			{
+				var unit = _gridMap[cell.x, cell.y].Occupant;
+				if (unit != null && unit != sourceUnit)
+				{
+					unit.Damage(1);
+				}
+			}
 		}
 
 		private void CheckUnitsToMove(IUnit unit)

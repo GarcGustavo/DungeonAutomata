@@ -62,6 +62,14 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 		}
 		
+		public static IEnumerator PunchToPosition(Transform transform, Vector3 targetPosition, float duration)
+		{
+			if(DOTween.IsTweening(transform))
+				DOTween.Kill(transform);
+			transform.DOPunchPosition(targetPosition, duration);
+			yield return null;
+		}
+		
 		public static IEnumerator MoveToPosition(Transform transform, Vector3 targetPosition, float duration)
 		{
 			if(DOTween.IsTweening(transform))

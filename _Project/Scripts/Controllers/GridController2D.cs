@@ -92,10 +92,12 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				//Enemy collision logic
 				if (_unit.GetType() == typeof(EnemyUnit) && tile.Occupant != null)
 				{
+					//Rework later into command pattern and AoE SO's
 					if (tile.Occupant.GetType() == typeof(PlayerUnit))
 					{
-						var enemy = tile.Occupant;
-						_eventManager.InvokeAttack(_unit, enemy);
+						var positions = new List<Vector3Int>();
+						positions.Add(tile.Occupant.CurrentTile);
+						_eventManager.InvokeAttack(_unit, positions);
 						return false;
 					}
 				}
@@ -111,11 +113,15 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 						tile.isEmpty = true;
 						return true;
 					}
+					//Rework later into command pattern and AoE SO's
 					if (tile.Occupant.GetType() == typeof(EnemyUnit))
 					{
-						var enemy = tile.Occupant;
-						_eventManager.InvokeAttack(_unit, enemy);
-						_eventManager.InvokePlayerMove(_currentPosition);
+						var positions = new List<Vector3Int>();
+						positions.Add(tile.Occupant.CurrentTile);
+						_eventManager.InvokeAttack(_unit, positions);
+						_eventManager.InvokePlayerAction();
+						//Replace with actual feedbacks/animations later
+						StartCoroutine(GridUtils.PunchToPosition(transform, tile.gridPosition, moveCD));
 						return false;
 					}
 				}

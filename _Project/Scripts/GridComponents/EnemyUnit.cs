@@ -14,13 +14,13 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 {
 	[RequireComponent(typeof(BoxCollider2D))]
 	[RequireComponent(typeof(GridController2D))]
-	public class EnemyUnit : MonoBehaviour, IUnit
+	public class EnemyUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
 		private MapManager _mapManager;
 		private EventManager _eventManager;
 		public string UnitName { get; set; }
-		public int MaxHealth { get; set; }
-		public int CurrentHealth { get; set; }
+		public int MaxHP { get; set; }
+		public int CurrentHP { get; set; }
 		public int Hunger { get; set; }
 		public int Thirst { get; set; }
 		public int AggroDistance { get; set; }
@@ -42,7 +42,6 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			_eventManager = EventManager.Instance;
 			_controller = GetComponent<GridController2D>();
 			_eventManager.OnEnemyTurnStart += UpdateState;
-			_eventManager.OnAttack += Attack;
 			var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 			spriteRenderer.sprite = _enemyData.sprite;
 			UnitName = _enemyData.enemyName;
@@ -52,7 +51,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public void InitializeUnit()
 		{
 			_tilemap = _mapManager.tileMapGenerator.GetTileMap();
-			CurrentHealth = MaxHealth;
+			MaxHP = _enemyData.Health;
+			CurrentHP = MaxHP;
 			CanMove = true;
 			//_controller.InitializeGrid();
 		}
@@ -60,7 +60,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private void UpdateState()
 		{
 			_controller.InitializeGrid();
-			if (Hunger >= 100 || Thirst >= 100 || CurrentHealth <= 0)
+			if (Hunger >= 100 || Thirst >= 100 || CurrentHP <= 0)
 			{
 				//Die();
 			}
@@ -145,7 +145,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Damage(int dmg)
 		{
-			CurrentHealth -= dmg;
+			Debug.Log("Enemy took " + dmg + " damage!");
+			CurrentHP -= dmg;
 		}
 
 		public void Die()
