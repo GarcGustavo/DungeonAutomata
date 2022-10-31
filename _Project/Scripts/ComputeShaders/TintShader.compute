@@ -1,0 +1,68 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel TintShader
+#include <HLSLSupport.cginc>
+#include <UnityCG.cginc>
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+float4 Color;
+int _ResultWidth;
+int _ResultHeight;
+//RWTexture2D<float4> Source;
+//RWTexture2D<float4> Source;
+//RWTexture2D<float4> Result;
+//SamplerState sampler_Source; // "sampler" + “_MainTex”
+
+RWTexture2D<float4> Result;
+
+[numthreads(8,8,1)]
+void TintShader (uint3 id : SV_DispatchThreadID)
+{
+    float2 position = float2((id.x) / _ResultWidth, (id.y) / _ResultHeight);
+    
+    float2 pixelSize = float2(1.0 / _ResultWidth, 1.0 / _ResultHeight);
+    float4 currentPixel = float4(position.x, position.y, 0, 0);
+    float4 neighborPixels = float4(0, 0, 0, 0);
+    // +Y
+    neighborPixels += float4(position.x + pixelSize.x, position.y + pixelSize.y, 0, 0);
+    neighborPixels += float4(position.x, position.y + pixelSize.y, 0, 0);
+    neighborPixels += float4(position.x - pixelSize.x, position.y + pixelSize.y, 0, 0);
+    // Neutral Y
+    neighborPixels += float4(position.x + pixelSize.x, position.y, 0, 0);
+    neighborPixels += float4(position.x - pixelSize.x, position.y, 0, 0);
+    // -Y
+    neighborPixels += float4(position.x + pixelSize.x, position.y - pixelSize.y, 0, 0);
+    neighborPixels += float4(position.x, position.y - pixelSize.y, 0, 0);
+    neighborPixels += float4(position.x - pixelSize.x, position.y - pixelSize.y, 0, 0);
+    // Add current pixel for reason
+    //neighborPixels += currentPixel;
+
+    if (currentPixel.r > 0.5)
+    {
+        if (neighborPixels.r > 1.5 && neighborPixels.r < 3.5)
+        {
+            //Between 2 and 3
+            Result[id.xy] = float4(1, 1, 1, 1) * Color;
+        }
+        else
+        {
+            //Result[id.xy] = float4(0, 0, 0, 1);
+            Result[id.xy] = float4(1, 0, 0, 1) * Color;
+        }
+    }
+    else
+    {
+        if (neighborPixels.r > 2.5 && neighborPixels.r < 3.5)
+        {
+            // == 3
+            Result[id.xy] = float4(1, 1, 1, 1) * Color;
+        }
+        else
+        {
+            Result[id.xy] = float4(0, 0, 0, 1);
+            //Result[id.xy] = float4(position.x, 0, 0, 1);
+        }
+    }
+    //Result[id.xy] = Color;
+    //Result[id.xy] = Source[id.xy] * Color;
+}

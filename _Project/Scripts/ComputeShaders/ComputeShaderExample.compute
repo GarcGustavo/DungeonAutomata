@@ -1,0 +1,85 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Automata
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+int _BlockSize;
+int _ResultWidth;
+int _ResultHeight;
+
+bool IsInsideRect(float2 min, float2 max, float2 p)
+{
+    return p.x >min.x && p.x < max.x && p.y > min.y && p.y < max.y;
+}
+
+[numthreads(8,8,1)]
+void Automata(uint3 id : SV_DispatchThreadID)
+{
+    float x = id.x / (float)_ResultWidth;
+    float y = id.y / (float)_ResultHeight;
+    Result[id.xy] = float4(x, y, 0.0, 0.0);
+    //_ImageFilterResult[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+}
+
+#pragma kernel TintMain
+[numthreads(8,8,1)]
+void TintMain (uint3 groupID : SV_GroupID, uint3 groupThreadID : SV_GroupThreadID, uint groupIndex : SV_GroupIndex, uint3 id : SV_DispatchThreadID)
+{
+    float x = id.x / (float)_ResultWidth;
+    float y = id.y / (float)_ResultHeight;
+    Result[id.xy] = float4(x, y, 0.0, 0.0);
+}
+
+#pragma kernel Conway
+[numthreads(8,8,1)]
+void Conway(uint3 id : SV_DispatchThreadID)
+{
+    /*
+    float2 position = float2((id.x) / _ResultWidth, (id.y) / _ResultHeight);
+    float2 pixelSize = float2(1.0 / _ResultWidth, 1.0 / _ResultHeight);
+
+    // TODO: insert actual code here!
+    float4 currentPixel = tex2Dlod(Result, float4(position.x, position.y, 0, 0));
+
+    float4 neighborPixels = float4(0, 0, 0, 0);
+    // +Y
+    neighborPixels += tex2Dlod(Result, float4(position.x + pixelSize.x, position.y + pixelSize.y, 0, 0));
+    neighborPixels += tex2Dlod(Result, float4(position.x, position.y + pixelSize.y, 0, 0));
+    neighborPixels += tex2Dlod(Result, float4(position.x - pixelSize.x, position.y + pixelSize.y, 0, 0));
+    // Neutral Y
+    neighborPixels += tex2Dlod(Result, float4(position.x + pixelSize.x, position.y, 0, 0));
+    neighborPixels += tex2Dlod(Result, float4(position.x - pixelSize.x, position.y, 0, 0));
+    // -Y
+    neighborPixels += tex2Dlod(Result, float4(position.x + pixelSize.x, position.y - pixelSize.y, 0, 0));
+    neighborPixels += tex2Dlod(Result, float4(position.x, position.y - pixelSize.y, 0, 0));
+    neighborPixels += tex2Dlod(Result, float4(position.x - pixelSize.x, position.y - pixelSize.y, 0, 0));
+    // Add current pixel for reason
+    //neighborPixels += currentPixel;
+
+    if (currentPixel.r > 0.5)
+    {
+        if (neighborPixels.r > 1.5 && neighborPixels.r < 3.5)
+        {
+            //Between 2 and 3
+            Result[id.xy] = float4(1, 1, 1, 1);
+        }
+        else
+        {
+            Result[id.xy] = float4(0, 0, 0, 1);
+        }
+    }
+    else
+    {
+        if (neighborPixels.r > 2.5 && neighborPixels.r < 3.5)
+        {
+            // == 3
+            Result[id.xy] = float4(1, 1, 1, 1);
+        }
+        else
+        {
+            Result[id.xy] = float4(0, 0, 0, 1);
+        }
+    }
+    */
+}
