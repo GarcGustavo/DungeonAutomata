@@ -50,7 +50,7 @@ namespace DungeonAutomata._Project.Editor
 	}
 
 	[Icon("d_SceneAsset Icon")]
-	[Overlay(typeof(SceneView), OverlayID, "Scene Switcher Creator Overlay")]
+	[Overlay(typeof(SceneView), OverlayID, "Scene Switcher Overlay")]
 	public class SceneSwitcherToolbarOverlay : ToolbarOverlay
 	{
 		public const string OverlayID = "scene-switcher";

@@ -1,9 +1,11 @@
+using System.Collections;
 using System.Collections.Generic;
 using Cinemachine;
 using DungeonAutomata._Project.Scripts.GridComponents;
 using DungeonAutomata._Project.Scripts.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
 
 namespace DungeonAutomata._Project.Scripts._Managers
 {
@@ -111,29 +113,29 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			if (_player.CurrentEnergy <= 0)
 			{
 				_player.SetMoveState(false);
-				UpdateGameState(GameState.EnemyTurn);
+				StartCoroutine(UpdateGameState(GameState.EnemyTurn));
 			}
 		}
 
 		private void EnemyTurnEnd()
 		{
-			UpdateGameState(GameState.PlayerTurn);
+			StartCoroutine(UpdateGameState(GameState.PlayerTurn));
 		}
 
 		private void ToggleMenu()
 		{
 			if (_state == GameState.Menu)
 			{
-				UpdateGameState(_previousState);
+				StartCoroutine(UpdateGameState(_previousState));
 			}
 			else
 			{
 				_player.SetMoveState(false);
-				UpdateGameState(GameState.Menu);
+				StartCoroutine(UpdateGameState(GameState.Menu));
 			}
 		}
 
-		private void UpdateGameState(GameState newState)
+		private IEnumerator UpdateGameState(GameState newState)
 		{
 			_previousState = _state;
 			_state = newState;
@@ -141,10 +143,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			switch (_state)
 			{
 				case GameState.PlayerTurn:
+					yield return GetWaitForSeconds(.2f);
 					_eventManager.InvokePlayerTurnStart();
 					_player.SetMoveState(true);
 					break;
 				case GameState.EnemyTurn:
+					yield return GetWaitForSeconds(.2f);
 					_player.SetMoveState(false);
 					_eventManager.InvokeEnemyTurnStart();
 					break;

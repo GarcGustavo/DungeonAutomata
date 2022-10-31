@@ -137,21 +137,21 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void GetPlayerInput()
 		{
-			if (Input.GetKeyDown(KeyCode.W))
+			if (Input.GetKey(KeyCode.W) && !Input.GetKeyUp(KeyCode.W))
 			{
 				var direction = zAxisUp ? Vector3Int.forward : Vector3Int.up;
 				Move(CurrentTile + direction);
 			}
-			else if (Input.GetKeyDown(KeyCode.S))
+			else if (Input.GetKey(KeyCode.S) && !Input.GetKeyUp(KeyCode.S))
 			{
 				var direction = zAxisUp ? Vector3Int.back : Vector3Int.down;
 				Move(CurrentTile + direction);
 			}
-			else if (Input.GetKeyDown(KeyCode.A))
+			else if (Input.GetKey(KeyCode.A) && !Input.GetKeyUp(KeyCode.A))
 			{
 				Move(CurrentTile + Vector3Int.left);
 			}
-			else if (Input.GetKeyDown(KeyCode.D))
+			else if (Input.GetKey(KeyCode.D) && !Input.GetKeyUp(KeyCode.D))
 			{
 				Move(CurrentTile + Vector3Int.right);
 			}
@@ -159,7 +159,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			{
 				_eventManager.InvokeMenu();
 			}
-			else if (Input.GetKey(KeyCode.Space))
+			else if (Input.GetKey(KeyCode.Space) && !Input.GetKeyUp(KeyCode.Space))
 			{
 				//Essentially a fast forward button
 				_eventManager.InvokePlayerAction();

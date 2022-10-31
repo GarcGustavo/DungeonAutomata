@@ -6,6 +6,7 @@ using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
 using DungeonAutomata._Project.Scripts.Data;
 using DungeonAutomata._Project.Scripts.GridComponents;
+using DungeonAutomata._Project.Scripts.Utilities;
 using MoreMountains.Feedbacks;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -62,11 +63,9 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				cells = _mapManager.GetGridMap();
 				var previousTile = cells[_currentPosition.x, _currentPosition.y];
 				var tile = cells[pos.x, pos.y];
-				if (DOTween.IsTweening(transform) || !CheckTile(tile)) 
+				if (!CheckTile(tile)) 
 					return;
-				_tween = transform.DOMove(pos, moveCD, true)
-					.SetEase(Ease.OutBack);
-				
+				StartCoroutine(GridUtils.MoveToPosition(transform, pos, moveCD));
 				tile.isEmpty = false;
 				tile.Occupant = _unit;
 				previousTile.isEmpty = true;

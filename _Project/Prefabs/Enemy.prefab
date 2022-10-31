@@ -87,7 +87,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 198b2380289e4b04fb2ee8b1c5eda040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveCD: 0.2
+  moveCD: 0.1
   feedbacks: {fileID: 0}
 --- !u!1 &984394960062898729
 GameObject:

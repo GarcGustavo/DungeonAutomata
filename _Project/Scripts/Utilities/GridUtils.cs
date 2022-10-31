@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
+using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
 
 namespace DungeonAutomata._Project.Scripts.Utilities
 {
@@ -57,6 +60,14 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 					err += dX;
 				}
 			}
+		}
+		
+		public static IEnumerator MoveToPosition(Transform transform, Vector3 targetPosition, float duration)
+		{
+			if(DOTween.IsTweening(transform))
+				DOTween.Kill(transform);
+			transform.DOMove(targetPosition, duration).SetEase(Ease.Linear);
+			yield return null;
 		}
 
 		//Testing Bresenhams Line Algorithm

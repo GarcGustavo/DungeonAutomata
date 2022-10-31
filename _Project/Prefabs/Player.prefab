@@ -4993,7 +4993,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 198b2380289e4b04fb2ee8b1c5eda040, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 1
   moveCD: 0.1
   feedbacks: {fileID: 8900980546428333048}
 --- !u!1 &7695723635074580663
