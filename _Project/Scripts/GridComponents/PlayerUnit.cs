@@ -131,11 +131,6 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			throw new System.NotImplementedException();
 		}
 
-		public List<CellData> GetNeighbors()
-		{
-			return _mapManager.GetCellsInRadius(CurrentTile, 1);
-		}
-
 		public void GetPlayerInput()
 		{
 			if (Input.GetKey(KeyCode.W) && !Input.GetKeyUp(KeyCode.W))

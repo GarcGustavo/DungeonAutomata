@@ -31,6 +31,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private Vector3Int playerPos;
 		private CellTypes targetType;
 		private Tilemap _tilemap;
+		private CellData[,] _cellMap;
 		public bool CanMove { get; set; }
 		private GridController2D _controller;
 		[SerializeField] private int _viewDistance = 5;
@@ -50,7 +51,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void InitializeUnit()
 		{
-			_tilemap = _mapManager.tileMapGenerator.GetTileMap();
+			_tilemap = _mapManager.GetTileMap();
 			MaxHP = _enemyData.Health;
 			CurrentHP = MaxHP;
 			CanMove = true;
@@ -59,7 +60,14 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		private void UpdateState()
 		{
+			if (CurrentHP <= 0)
+			{
+				Die();
+				return;
+			}
+			
 			_controller.InitializeGrid();
+			_cellMap = _mapManager.GetCellMap();
 			if (Hunger >= 100 || Thirst >= 100 || CurrentHP <= 0)
 			{
 				//Die();
@@ -73,12 +81,12 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			{
 				StartCoroutine(PaintVisibleTiles(Color.white));
 			}
-			_visibleCells = _mapManager.GetCellsInRadius(CurrentTile, _viewDistance);
-			
+			//TODO: decouple from mapmanager by using static/position based version
+			//var cellsInRange = GridUtils.GetCellRadius(CurrentTile, _viewDistance);
+			_visibleCells = GridUtils.GetCellsInRadius(CurrentTile, _viewDistance, _cellMap);
 			//Check for player
-			if (_mapManager.GetCellDistance(playerPos, CurrentTile) <= AggroDistance)
+			if (GridUtils.GetCellDistance(playerPos, CurrentTile) <= AggroDistance)
 			{
-				Debug.Log("Player spotted at: " + playerPos);
 				CurrentTarget = LookForPlayer();
 			}
 			//Check for food and water
@@ -125,16 +133,19 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		private Vector3Int LookForPlayer()
 		{
+			Debug.Log("Looking for player");
 			var cellTarget = _mapManager.GetPlayer();
-			var dist = _mapManager.GetCellDistance(CurrentTile, playerPos);
+			var dist = GridUtils.GetCellDistance(CurrentTile, playerPos);
 			if (cellTarget != null)
 			{
 				var los = GetUnitSight(CurrentTile, cellTarget.CurrentTile);
 				if (los.Contains(cellTarget.CurrentTile) && dist <= AggroDistance)
 				{
+					Debug.Log("Moving to player");
 					return los[0];
 				}
 			}
+			Debug.Log("Player too far");
 			return Wander();
 		}
 
@@ -151,6 +162,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Die()
 		{
+			_eventManager.InvokeUnitDeath(this);
 			gameObject.SetActive(false);
 		}
 
@@ -224,7 +236,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		//Testing Bresenhams Line Algorithm
 		private List<Vector3Int> GetUnitSight(Vector3Int source, Vector3Int target)
 		{
-			var gridMap = _mapManager.GetGridMap();
+			var gridMap = _mapManager.GetCellMap();
 			//Debug.DrawLine( map.CellToWorld(source) , map.CellToWorld(target), Color.red, 5f);
 			var losCells = GridUtils.GetLineOfSight(source, target);
 			var visibleLos= new List<Vector3Int>();
@@ -234,6 +246,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				{
 					break;
 				}
+				Debug.Log("Adding cell to los: " + losCell);
 				visibleLos.Add(losCell);
 			}
 			return visibleLos;

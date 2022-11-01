@@ -11,6 +11,11 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 {
 	public class TileMapGenerator : MonoBehaviour
 	{
+		/// <summary>
+		///     Cellular automata generation
+		/// </summary>
+		
+		//TODO: Minimize serialized fields
 		[SerializeField] private Tilemap targetMap;
 		[SerializeField] private Tilemap highlightTilemap;
 		[SerializeField] private float randomFillPercent = 50f;
@@ -35,22 +40,13 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		[SerializeField] private  int enemyAmount = 10;
 		[SerializeField] private  int itemAmount = 10;
 
-		//Cellular automata method
+		//Cellular automata maps
 		private CellData[,] _map;
 		private CellData[,] _mapBuffer;
-		//Generating base ground/wall map to initialize main CellData map
 		private int[,] _rooms;
-		//private int[,] _obstacles;
-		//private int[,] _playerSpawnPoints;
-		//private int[,] _enemySpawnPoints;
-		//private int[,] _itemSpawnPoints;
-		//private int[,] _exitPoints;
-		//private int[,] _groundMap;
 
-		/// <summary>
-		///     Cellular automata generation
-		/// </summary>
-		//[ContextMenu("Generate Map")]
+		#region API
+		
 		[Button]
 		public void GenerateMap()
 		{
@@ -64,7 +60,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			targetMap.ClearAllTiles();
 			targetMap.CompressBounds();
 			targetMap.RefreshAllTiles();
-			// Adding 2 to width and height to account for the border walls
 			RandomFillMap();
 			ApplySmooth();
 			ProcessMap();
@@ -72,13 +67,26 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			SetSpawns();
 			//DrawBaseTilemap();
 		}
+
+		[Button]
+		public void ClearMap()
+		{
+			targetMap.ClearAllTiles();
+			targetMap.CompressBounds();
+			targetMap.RefreshAllTiles();
+			
+			highlightTilemap.ClearAllTiles();
+			targetMap.CompressBounds();
+			targetMap.RefreshAllTiles();
+		}
 		
+		//Getters to be accessed through manager singleton in order to decouple map generator from other systems
 		public Tilemap GetTileMap()
 		{
 			return targetMap;
 		}
 		
-		public CellData[,] GetGridMap()
+		public CellData[,] GetCellMap()
 		{
 			return _map;
 		}
@@ -87,8 +95,27 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		{
 			return highlightTilemap;
 		}
+
+		public Vector3Int GetPlayerSpawnPosition()
+		{
+			return _playerSpawnPosition;
+		}
+
+		public List<Vector3Int> GetEnemySpawnPositions()
+		{
+			return _enemySpawnPositions;
+		}
+
+		public List<Vector3Int> GetItemSpawnPositions()
+		{
+			return _itemSpawnPositions;
+		}
 		
-		
+		#endregion
+
+		#region AUTOMATAGEN
+
+		//Cellular Automata ruleset
 		private void RandomFillMap()
 		{
 			var prng = new Random(seed);
@@ -115,8 +142,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				}
 			}
 		}
-
-		//Cellular Automata ruleset
+		
 		private void ApplySmooth()
 		{
 			_mapBuffer = new CellData[width, height];
@@ -172,10 +198,10 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 
 					if (_mapBuffer[i, j].cellType != CellTypes.Ground) continue;
 					var pos = new Vector3Int(i, j, 0);
-					var neighbors = GetCellsInRadius(pos, spawnRadius);
-					var playerDist = playerSet?GetCellDistance(_playerSpawnPosition, pos):0;
-					var exitDist = exitSet?GetCellDistance(exitPos, pos):0;
-						
+					var neighbors = GridUtils.GetCellsInRadius(pos, spawnRadius, _mapBuffer);
+					var playerDist = playerSet?GridUtils.GetCellDistance(_playerSpawnPosition, pos):0;
+					var exitDist = exitSet?GridUtils.GetCellDistance(exitPos, pos):0;
+					
 					if (!playerSet)
 					{
 						var newTile = Instantiate(playerSpawnCell);
@@ -236,46 +262,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 		}
 
-		public Vector3Int GetPlayerSpawnPosition()
-		{
-			return _playerSpawnPosition;
-		}
-
-		public List<Vector3Int> GetEnemySpawnPositions()
-		{
-			return _enemySpawnPositions;
-		}
-
-		public List<Vector3Int> GetItemSpawnPositions()
-		{
-			return _itemSpawnPositions;
-		}
-
-		public List<CellData> GetCellsInRadius(Vector3Int pos, int radius)
-		{
-			var cellList = new List<CellData>();
-			for (var i = pos.x - radius; i <= pos.x + radius; i++)
-			{
-				for (var j = pos.y - radius; j <= pos.y + radius; j++)
-				{
-					if (i >= 0 && i < width && j >= 0 && j < height)
-					{
-						if (i != pos.x || j != pos.y)
-						{
-							cellList.Add(_mapBuffer[i, j]);
-						}
-					}
-				}
-			}
-			return cellList;
-		}
-		public int GetCellDistance(Vector3Int pos1, Vector3Int pos2)
-		{
-			var x = Mathf.Abs(pos1.x - pos2.x);
-			var y = Mathf.Abs(pos1.y - pos2.y);
-			return x + y;
-		}
-
+		//Replace with grid utils implementation
 		private int GetNeighborWalls(int x, int y)
 		{
 			var wallCount = 0;
@@ -301,6 +288,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 
 		private void CreateMapBorders()
 		{
+			// Adding 2 to width and height to account for the border walls
 			CellData[,] borderedMap = new CellData[width + 2, height + 2];
 
 			for (int x = 0; x < borderedMap.GetLength(0); x++)
@@ -363,7 +351,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 		}
 
-		void ProcessMap() {
+		private void ProcessMap() {
 			List<List<Vector3Int>> wallRegions = GetRegions(CellTypes.Wall);
 			int wallThresholdSize = 50;
 
@@ -402,7 +390,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			ConnectClosestRooms (survivingRooms);
 		}
 
-		void ConnectClosestRooms(List<GridRoom> allRooms, bool forceAccessibilityFromMainRoom = false) {
+		private void ConnectClosestRooms(List<GridRoom> allRooms, bool forceAccessibilityFromMainRoom = false) {
 
 			List<GridRoom> roomListA = new List<GridRoom> ();
 			List<GridRoom> roomListB = new List<GridRoom> ();
@@ -473,7 +461,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 		}
 		
-		void CreatePassage(GridRoom roomA, GridRoom roomB, Vector3Int tileA, Vector3Int tileB) {
+		private void CreatePassage(GridRoom roomA, GridRoom roomB, Vector3Int tileA, Vector3Int tileB) {
 			GridRoom.ConnectRooms (roomA, roomB);
 			List<Vector3Int> line = GridUtils.GetLineOfSight(tileA, tileB);
 			foreach (Vector3Int c in line) {
@@ -481,13 +469,13 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 		}
 
-		void SurroundCell(Vector3Int pos, int radius, CellData cell) {
+		private void SurroundCell(Vector3Int pos, int radius, CellData cell) {
 			for (int x = -radius; x <= radius; x++) {
 				for (int y = -radius; y <= radius; y++) {
 					if (x*x + y*y <= radius*radius) {
 						int drawX = pos.x + x;
 						int drawY = pos.y + y;
-						if (IsInMapRange(drawX, drawY))
+						if (GridUtils.IsInMapRange(drawX, drawY, _map))
 						{
 							var newTile = Instantiate(cell);
 							_map[drawX, drawY] = newTile;
@@ -539,7 +527,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				{
 					for (int y = tile.y - 1; y <= tile.y + 1; y++) 
 					{
-						if (IsInMapRange(x,y) && (y == tile.y || x == tile.x)) 
+						if (GridUtils.IsInMapRange(x, y, _map) && (y == tile.y || x == tile.x)) 
 						{
 							if (mapFlags[x,y] == 0 && _map[x,y].cellType == cellTypes) 
 							{
@@ -553,31 +541,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			return tiles;
 		}
 
-		private bool IsInMapRange(int x, int y) 
-		{
-			return x >= 0 && x < width && y >= 0 && y < height;
-		}
-
-		[Button]
-		public void ClearMap()
-		{
-			targetMap.ClearAllTiles();
-			targetMap.CompressBounds();
-			targetMap.RefreshAllTiles();
-			
-			highlightTilemap.ClearAllTiles();
-			targetMap.CompressBounds();
-			targetMap.RefreshAllTiles();
-		}
-
-		public void GetCell(Vector3Int cell)
-		{
-			
-		}
-
-		public void SwapCell(Vector3Int cell)
-		{
-			
-		}
+		#endregion
+		
 	}
 }

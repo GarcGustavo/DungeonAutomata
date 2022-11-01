@@ -61,6 +61,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_gridMap = new CellData[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
 			_eventManager.OnUnitAction += CheckUnitsToMove;
 			_eventManager.OnAttack += DamageCells;
+			_eventManager.OnUnitDeath += RemoveUnitToMove;
 		}
 
 		//Move to combat manager later
@@ -76,6 +77,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			}
 		}
 
+		private void RemoveUnitToMove(IUnit unit)
+		{
+			_unitsToMove.Remove(unit);
+		}
+
 		private void CheckUnitsToMove(IUnit unit)
 		{
 			if (_unitsToMove.Contains(unit))
@@ -84,7 +90,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				if (_unitsToMove.Count == 0)
 				{
 					_eventManager.InvokeEnemyTurnEnd();
-					_unitsToMove.AddRange(_enemies);
+					foreach (var enemy in _enemies)
+					{
+						if(enemy.isActiveAndEnabled)
+							_unitsToMove.Add(enemy);
+					}
 				}
 			}
 		}
@@ -97,7 +107,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			tileMapGenerator.GenerateMap();
 			tileMap = tileMapGenerator.GetTileMap();
-			_gridMap = tileMapGenerator.GetGridMap();
+			_gridMap = tileMapGenerator.GetCellMap();
 			highLightMap = tileMapGenerator.GetHighlightMap();
 			highLightMap.ClearAllTiles();
 			highLightMap.RefreshAllTiles();
@@ -126,10 +136,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				_visibleCells = GridUtils.GetLineOfSight(_player.CurrentTile, grid.WorldToCell(cell));
 				if (cellData.Occupant != null)
 				{
+					_uiManager.SetUnitInfo(cellData.Occupant);
 					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"] " + cellData.Occupant.UnitName);
 				}
 				else
 				{
+					_uiManager.SetUnitInfo(null);
 					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]");
 				}
 			}
@@ -154,7 +166,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			return neighbors;
 		}
 
-		//Convert unity tilemap to 2d array for easier manipulation
+		//Convert unity tilemap to 2d array for easier manipulation, for adding premade rooms later (needs refactor)
 		private int[,] ExtractTileMapData(Tilemap tileMap)
 		{
 			var roomTilemap = roomMaps[Random.Range(0, roomMaps.Length)];
@@ -175,11 +187,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private void SpawnPlayer()
 		{
 			_playerSpawnPoint = tileMapGenerator.GetPlayerSpawnPosition();
-			Debug.Log("Spawning player at: " + _playerSpawnPoint);
+			//Debug.Log("Spawning player at: " + _playerSpawnPoint);
 			var prefab = Instantiate(playerPrefab, _playerSpawnPoint, Quaternion.identity);
 			_player = prefab.GetComponent<PlayerUnit>();
 			_player.InitializeUnit();
 			_player.CurrentTile = _gridMap[_playerSpawnPoint.x, _playerSpawnPoint.y].gridPosition;
+			_gameManager.SetPlayer(_player);
 			_gameManager.ResetCamera(_player.transform);
 			var tile = tileMap.GetTile(_player.CurrentTile) as CellData;
 			tile.Occupant = _player;
@@ -191,7 +204,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			//Spawn enemies at available tiles
 			foreach (var spawnPoint in _enemySpawnPoints)
 			{
-				Debug.Log("Spawning enemy at: " + spawnPoint);
+				//Debug.Log("Spawning enemy at: " + spawnPoint);
 				var gridPos = spawnPoint;
 				var prefab = Instantiate(enemyPrefabs[0], gridPos, Quaternion.identity);
 				var enemy = prefab.GetComponent<EnemyUnit>();
@@ -210,7 +223,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_itemSpawnPoints = tileMapGenerator.GetItemSpawnPositions();
 			foreach (var spawnPoint in _itemSpawnPoints)
 			{
-				Debug.Log("Spawning item at: " + spawnPoint);
+				//Debug.Log("Spawning item at: " + spawnPoint);
 				var gridPos = spawnPoint;
 				var prefab = Instantiate(itemPrefabs[0], gridPos, Quaternion.identity);
 				var item = prefab.GetComponent<ItemUnit>();
@@ -225,14 +238,14 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		//-------------------------------------------------------------------
 		// Public getters
 		//-------------------------------------------------------------------
-		public CellData[,] GetGridMap()
+		public CellData[,] GetCellMap()
 		{
-			return _gridMap;
+			return tileMapGenerator.GetCellMap();
 		}
 
 		public Tilemap GetTileMap()
 		{
-			return tileMap;
+			return tileMapGenerator.GetTileMap();
 		}
 
 		public PlayerUnit GetPlayer()
@@ -243,16 +256,6 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public Vector3Int GetPlayerPosition()
 		{
 			return _player.CurrentTile;
-		}
-
-		public int GetCellDistance(Vector3Int src, Vector3Int target)
-		{
-			return tileMapGenerator.GetCellDistance(src, target);
-		}
-
-		public List<CellData> GetCellsInRadius(Vector3Int pos, int radius)
-		{
-			return tileMapGenerator.GetCellsInRadius(pos, radius);
 		}
 	}
 }

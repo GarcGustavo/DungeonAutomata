@@ -43,6 +43,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public event Action OnUpdateInventory;
 		public event Action<Vector3Int> OnUnitMove;
 		public event Action<IUnit> OnUnitAction;
+		public event Action<IUnit> OnUnitDeath;
 
 		#region Invokes
 
@@ -101,6 +102,10 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public void InvokeAttack(IUnit source, List<Vector3Int> targetCells)
 		{
 			OnAttack?.Invoke(source, targetCells);
+		}
+		public void InvokeUnitDeath(IUnit unit)
+		{
+			OnUnitDeath?.Invoke(unit);
 		}
 
 		public void InvokePickup(IItem item)

@@ -16,6 +16,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		[SerializeField] private TMP_Text _turnText;
 		[SerializeField] private TMP_Text _energyText;
 		[SerializeField] private TMP_Text _inspectText;
+		[SerializeField] private TMP_Text _unitInfoText;
+		[SerializeField] private GameObject _infoPanel;
 		[SerializeField] private RectTransform inventoryPanel;
 		[SerializeField] private ItemContainerUI inventoryItem;
 		private EventManager _eventManager;
@@ -66,6 +68,32 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				_turnText.text = "Turn: " + _turnCount;
 			}
 			*/
+		}
+
+		public void SetUnitInfo(IUnit target)
+		{
+			if(target != null)
+			{
+				_infoPanel.SetActive(true);
+				if (target.GetType() == typeof(EnemyUnit)
+				    || target.GetType() == typeof(PlayerUnit))
+				{
+					var combatUnit = (ICombatUnit)target;
+					_unitInfoText.text = target.UnitName + "\n"
+					                                     + "Health: "
+					                                     + combatUnit.CurrentHP + "/"
+					                                     + combatUnit.MaxHP + "\n";
+				}
+				else
+				{
+					_unitInfoText.text = target.UnitName + "\n";
+				}
+			}
+			else
+			{
+				_infoPanel.SetActive(false);
+				_unitInfoText.text = "";
+			}
 		}
 
 		public void SetHoverText(string text)

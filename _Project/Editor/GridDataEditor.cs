@@ -37,21 +37,33 @@ namespace DungeonAutomata._Project.Editor
 			if (selectedType != null)
 			{
 				tree.Add("Create New", new CreateNewScriptableData(selectedType.Name));
-				tree.AddAllAssetsAtPath(selectedType.Name, 
-					"Assets/", selectedType, true, true)
+				tree.AddAllAssetsAtPath(selectedType.Name,
+						"Assets/", selectedType, true, true)
 					.AddThumbnailIcons();
 			}
+			else
+			{
+				tree.Add("Select a type to manage", 
+					new EmptyScriptableData());
+			}
 			return tree;
+		}
+		
+		public class EmptyScriptableData
+		{
+			public EmptyScriptableData(){}
 		}
 		public class CreateNewScriptableData
 		{
 
+			public string TypeName = "Data";
 			public string ObjectName = "New Object";
 			[InlineEditor(Expanded = true)]
 			public ScriptableObject data;
 			
 			public CreateNewScriptableData(string selectedTypeName)
 			{
+				TypeName = "selectedTypeName";
 				switch (selectedTypeName)
 				{
 					case "EnemyData":
@@ -84,13 +96,15 @@ namespace DungeonAutomata._Project.Editor
 			private void CreateNewData()
 			{
 				AssetDatabase.CreateAsset(data,
-					"Assets/_Project/ScriptableObjects/GridUnits/" + ObjectName + ".asset");
+					"Assets/_Project/ScriptableObjects/"+ TypeName +"/" + ObjectName + ".asset");
 				AssetDatabase.SaveAssets();
 			}
 		}
 
 		protected override void OnBeginDrawEditors()
 		{
+			if (MenuTree == null) return;
+			
 			OdinMenuTreeSelection selected = MenuTree.Selection;
 
 			SirenixEditorGUI.BeginHorizontalToolbar();

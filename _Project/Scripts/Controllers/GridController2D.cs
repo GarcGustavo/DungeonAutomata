@@ -31,6 +31,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		private List<Vector3Int> _optimalPath;
 		private Stack<Vector3Int> _optimalPathStack;
 		private IUnit _unit;
+		private Transform _unitSprite;
 
 		//Public variables and events
 		public bool CanMove { get; set; }
@@ -41,12 +42,13 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			_mapManager = MapManager.Instance;
 			CanMove = true;
 			_unit = GetComponent<IUnit>();
+			_unitSprite = GetComponentInChildren<SpriteRenderer>().transform;
 		}
 
 		public void InitializeGrid()
 		{
 			tilemap = _mapManager.GetTileMap();
-			cells = _mapManager.GetGridMap();
+			cells = _mapManager.GetCellMap();
 		}
 
 		public void SetPosition(Vector3Int position)
@@ -60,7 +62,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			_currentPosition = _unit.CurrentTile;
 			if (tilemap.HasTile(pos))
 			{
-				cells = _mapManager.GetGridMap();
+				cells = _mapManager.GetCellMap();
 				var previousTile = cells[_currentPosition.x, _currentPosition.y];
 				var tile = cells[pos.x, pos.y];
 				if (!CheckTile(tile)) 
@@ -97,6 +99,11 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 					{
 						var positions = new List<Vector3Int>();
 						positions.Add(tile.Occupant.CurrentTile);
+						Debug.Log("Attacking: " + tile.gridPosition);
+						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
+							_currentPosition, 
+							tile.gridPosition, 
+							moveCD));
 						_eventManager.InvokeAttack(_unit, positions);
 						return false;
 					}
@@ -118,10 +125,14 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 					{
 						var positions = new List<Vector3Int>();
 						positions.Add(tile.Occupant.CurrentTile);
+						Debug.Log("Attacking: " + tile.gridPosition);
+						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
+							_currentPosition, 
+							tile.gridPosition, 
+							moveCD));
 						_eventManager.InvokeAttack(_unit, positions);
 						_eventManager.InvokePlayerAction();
-						//Replace with actual feedbacks/animations later
-						StartCoroutine(GridUtils.PunchToPosition(transform, tile.gridPosition, moveCD));
+						//Replace with actual feedbacks/animations later);
 						return false;
 					}
 				}

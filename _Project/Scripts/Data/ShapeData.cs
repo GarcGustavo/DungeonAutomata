@@ -13,6 +13,7 @@ namespace DungeonAutomata._Project.Scripts.Data
 		[SerializeField] private int range;
 		[TableMatrix(HorizontalTitle = "Square Celled Matrix", SquareCells = true, DrawElementMethod = "DrawMatrix")]
 		[SerializeField] private int[,] _shapeMatrix;
+		public int[,] ShapeMatrix => _shapeMatrix;
 		
 		[OnInspectorInit]
 		public void CreateData()

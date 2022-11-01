@@ -188,15 +188,10 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			_eventManager.InvokePlayerSpawn();
 		}
-
-		private void UpdateHealthUI(int health)
+		
+		public void SetPlayer(PlayerUnit player)
 		{
-			//Update health UI
-		}
-
-		private void UpdateEnergyUI(int energy)
-		{
-			//Update energy UI
+			_player = player;
 		}
 
 		public PlayerUnit GetPlayer()
