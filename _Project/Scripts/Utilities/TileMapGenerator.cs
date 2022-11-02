@@ -23,6 +23,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		[SerializeField] private int height;
 		[SerializeField] private int seed;
 		[SerializeField] private int circleRadius = 5;
+		[SerializeField] private int smoothingIterations = 5;
 		[SerializeField] private bool randomSeed = true;
 
 		[SerializeField] private CellData wallCell;
@@ -43,7 +44,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		//Cellular automata maps
 		private CellData[,] _map;
 		private CellData[,] _mapBuffer;
-		private int[,] _rooms;
+		private List<int[,]> _rooms;
 
 		#region API
 		
@@ -55,17 +56,13 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				seed = (int)DateTime.Now.Ticks;
 			}
 			_map = new CellData[width,height];
-			targetMap.size = new Vector3Int(width, height, 1);
-			targetMap.origin = new Vector3Int(0, 0, 0);
-			targetMap.ClearAllTiles();
-			targetMap.CompressBounds();
-			targetMap.RefreshAllTiles();
 			RandomFillMap();
-			ApplySmooth();
-			ProcessMap();
-			CreateMapBorders();
-			SetSpawns();
-			//DrawBaseTilemap();
+			SmoothMap(smoothingIterations);
+			GenerateRooms(5);
+			//ProcessMap();
+			//CreateMapBorders();
+			//SetSpawns();
+			DrawTilemap(_map);
 		}
 
 		[Button]
@@ -119,7 +116,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		private void RandomFillMap()
 		{
 			var prng = new Random(seed);
-			//var vectorPosition = new Vector3Int(0, 0, 0);
 			
 			for (var x = 0; x < width; x++)
 			{
@@ -127,48 +123,115 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				{
 					if (x == 0 || x == width-1 || y == 0 || y == height-1) 
 					{
+						//Create borders
 						var newTile = Instantiate(wallCell);
 						_map[x,y] = newTile;
-						//newTile.gridPosition = new Vector3Int(x, y, 0);
-						targetMap.SetTile(new Vector3Int(x, y, 0), newTile);
 					}
 					else
 					{
 						var newTile = Instantiate(prng.Next(0, 100) < randomFillPercent ? wallCell : groundCell);
 						_map[x, y] = newTile;
-						//newTile.gridPosition = new Vector3Int(x, y, 0);
-						targetMap.SetTile(new Vector3Int(x, y, 0), newTile);
 					}
 				}
 			}
 		}
 		
-		private void ApplySmooth()
+		private void SmoothMap(int iterations)
 		{
-			_mapBuffer = new CellData[width, height];
-			_mapBuffer = _map;
-			for (var i = 0; i < width; i++)
+			for (int i = 0; i < iterations; i++)
 			{
-				for (var j = 0; j < height; j++)
+				_mapBuffer = _map;
+				for (var x = 1; x < width-1; x++)
 				{
-					var neighborWalls = GetNeighborWalls(i, j);
-					if (neighborWalls > 4)
+					for (var y = 1; y < height-1; y++)
 					{
-						var newTile = Instantiate(wallCell);
-						_mapBuffer[i, j] = newTile;
-						//newTile.gridPosition = new Vector3Int(i, j, 0);
-						targetMap.SetTile(new Vector3Int(i, j, 0), newTile);
-					}
-					else if (neighborWalls < 4)
-					{
-						var newTile = Instantiate(groundCell);
-						_mapBuffer[i, j] = newTile;
-						//newTile.gridPosition = new Vector3Int(i, j, 0);
-						targetMap.SetTile(new Vector3Int(i, j, 0), groundCell);
+						if (_mapBuffer[x, y].cellType == CellTypes.Ground)
+						{
+							var neighborGround = GridUtils.GetNeighborCells(
+								new Vector3Int(x, y),
+								_mapBuffer,
+								CellTypes.Ground).Count;
+							if (neighborGround < 4)
+							{
+								var newTile = Instantiate(wallCell);
+								_map[x, y] = newTile;
+							}
+						}
+						else
+						{
+							var neighborGround = GridUtils.GetNeighborCells(
+								new Vector3Int(x, y),
+								_mapBuffer,
+								CellTypes.Ground).Count;
+							if (neighborGround > 6)
+							{
+								var newTile = Instantiate(groundCell);
+								_map[x, y] = newTile;
+							}
+						}
 					}
 				}
 			}
-			_map = _mapBuffer;
+		}
+
+		private void GenerateRooms(int roomAmount)
+		{
+			_rooms = new List<int[,]>();
+			for (int i = 0; i < roomAmount; i++)
+			{
+				_mapBuffer = _map;
+				var isValidOrigin = false;
+				var placementAttempts = 0;
+				var random = new Random(seed + i);
+				var roomWidth = random.Next(5, 25);
+				var roomHeight = random.Next(5, 25);
+				var room = new int[roomWidth, roomHeight];
+				for (int x = 0; x < roomWidth; x++)
+				{
+					for (int y = 0; y < roomHeight; y++)
+					{
+						room[x, y] = 1;
+					}
+				}
+				var roomOrigin = new Vector3Int(
+					random.Next(roomWidth + 1, width - roomWidth - 1), 
+					random.Next(roomHeight + 1, height - roomHeight - 1));
+				
+				var roomCells = GridUtils.GetCellsInShape(roomOrigin, room, _mapBuffer);
+
+				while (!isValidOrigin)
+				{
+					if (placementAttempts > 100)
+					{
+						placementAttempts = 0;
+						break;
+					}
+					placementAttempts++;
+					isValidOrigin = true;
+					
+					foreach (var cell in roomCells)
+					{
+						if (cell.cellType != CellTypes.Wall)
+						{
+							roomOrigin.x = random.Next(roomWidth + 1, width - roomWidth - 1);
+							roomOrigin.y = random.Next(roomWidth + 1, height - roomHeight - 1);
+							roomCells = GridUtils.GetCellsInShape(roomOrigin, room, _mapBuffer);
+							isValidOrigin = false;
+							break;
+						}
+					}
+
+					if (isValidOrigin)
+					{
+						placementAttempts = 0;
+						_rooms.Add(room);
+						foreach (var cell in GridUtils.GetPositionsInShape(roomOrigin, room))
+						{
+							_map[cell.x, cell.y] = Instantiate(groundCell);
+						}
+					}
+				}
+			}
 		}
 		
 		private void SetSpawns()
@@ -183,42 +246,46 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			var exitPos = new Vector3Int(0,0,0);
 			var enemyCount = 0;
 			var itemCount = 0;
+			var prng = new Random(seed);
+			
 			for (var i = 0; i < width; i++)
 			{
 				for (var j = 0; j < height; j++)
 				{
-					if (playerSet 
-					    && exitSet 
-					    && keySet 
-					    && enemyCount >= enemyAmount 
-					    && itemCount >= itemAmount)
+					if (playerSet)
+					    //&& exitSet 
+					    //&& keySet 
+					    //&& enemyCount >= enemyAmount 
+					    //&& itemCount >= itemAmount)
 					{
 						break;
 					}
 
 					if (_mapBuffer[i, j].cellType != CellTypes.Ground) continue;
 					var pos = new Vector3Int(i, j, 0);
-					var neighbors = GridUtils.GetCellsInRadius(pos, spawnRadius, _mapBuffer);
+					//var neighbors = GridUtils.GetCellsInRadius(pos, spawnRadius, _mapBuffer);
+					var neighbors = GridUtils.GetCellsInRadius(pos, spawnRadius, _map);
 					var playerDist = playerSet?GridUtils.GetCellDistance(_playerSpawnPosition, pos):0;
 					var exitDist = exitSet?GridUtils.GetCellDistance(exitPos, pos):0;
 					
 					if (!playerSet)
 					{
 						var newTile = Instantiate(playerSpawnCell);
-						_mapBuffer[i, j] = newTile;
-						//newTile.gridPosition = pos;
 						targetMap.SetTile(pos, newTile);
+						_map[i, j] = newTile;
+						//newTile.gridPosition = pos;
 						_playerSpawnPosition = pos;
 						playerSet = true;
 					}
+					/*
 					else if (!exitSet 
 					         && playerDist > width/2 
 					         && playerDist > height/2)
 					{
 						var newTile = Instantiate(exitCell);
+						targetMap.SetTile(pos, newTile);
 						_mapBuffer[i, j] = newTile;
 						//newTile.gridPosition = pos;
-						targetMap.SetTile(pos, newTile);
 						exitPos = pos;
 						exitSet = true;
 					}
@@ -229,9 +296,9 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 						         x.cellType is CellTypes.EnemySpawn))
 					{
 						var newTile = Instantiate(spawnCell);
+						targetMap.SetTile(pos, newTile);
 						_mapBuffer[i, j] = newTile;
 						//newTile.gridPosition = pos;
-						targetMap.SetTile(pos, newTile);
 						enemyCount++;
 						_enemySpawnPositions.Add(pos);
 					}
@@ -240,9 +307,9 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 						         x.cellType is CellTypes.ItemSpawn))
 					{
 						var newTile = Instantiate(itemCell);
+						targetMap.SetTile(pos, newTile);
 						_mapBuffer[i, j] = newTile;
 						//newTile.gridPosition = pos;
-						targetMap.SetTile(pos, newTile);
 						itemCount++;
 						_itemSpawnPositions.Add(pos);
 					}
@@ -253,100 +320,12 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 						         x.cellType is CellTypes.ItemSpawn))
 					{
 						var newTile = Instantiate(keyCell);
+						targetMap.SetTile(pos, newTile);
 						_mapBuffer[i, j] = newTile;
 						//newTile.gridPosition = pos;
-						targetMap.SetTile(pos, newTile);
 						keySet = true;
 					}
-				}
-			}
-		}
-
-		//Replace with grid utils implementation
-		private int GetNeighborWalls(int x, int y)
-		{
-			var wallCount = 0;
-			for (var i = x - 1; i <= x + 1; i++)
-			{
-				for (var j = y - 1; j <= y + 1; j++)
-				{
-					if (i >= 0 && i < width && j >= 0 && j < height)
-					{
-						if (i != x || j != y)
-						{
-							wallCount += (_map[i, j].cellType == CellTypes.Wall)?1:0;
-						} 
-					}
-					else
-					{
-						wallCount++;
-					}
-				}
-			}
-			return wallCount;
-		}
-
-		private void CreateMapBorders()
-		{
-			// Adding 2 to width and height to account for the border walls
-			CellData[,] borderedMap = new CellData[width + 2, height + 2];
-
-			for (int x = 0; x < borderedMap.GetLength(0); x++)
-			{
-				for (int y = 0; y < borderedMap.GetLength(1); y++)
-				{
-					if (x > 0 && x < width && y > 0 && y < height)
-					{
-						borderedMap[x, y] = _map[x, y];
-					}
-					else
-					{
-						var newTile = Instantiate(wallCell);
-						//newTile.gridPosition = new Vector3Int(x, y, 0);
-						targetMap.SetTile(new Vector3Int(x, y, 0), newTile);
-						borderedMap[x, y] = newTile;
-					}
-				}
-			}
-			_map = borderedMap;
-		}
-		private void DrawBaseTilemap()
-		{
-			targetMap.size = new Vector3Int(width, height, 1);
-			targetMap.origin = new Vector3Int(0, 0, 0);
-			targetMap.ClearAllTiles();
-			targetMap.CompressBounds();
-			targetMap.RefreshAllTiles();
-			for (var i = 0; i < width; i++)
-			{
-				for (var j = 0; j < height; j++)
-				{
-					//Turn into prefab-based map and set sprites/colors at runtime
-					if (_map[i, j].cellType == CellTypes.Wall)
-					{
-						targetMap.SetTile(_map[i,j].gridPosition, wallCell);
-						_map[i, j] = targetMap.GetTile(_map[i, j].gridPosition) as CellData;
-					}
-					else  if(_map[i,j].cellType == CellTypes.Ground)
-					{
-						targetMap.SetTile(_map[i,j].gridPosition, groundCell);
-						_map[i, j] = targetMap.GetTile(_map[i, j].gridPosition) as CellData;
-					}
-					else if(_map[i,j].cellType == CellTypes.PlayerSpawn)
-					{
-						targetMap.SetTile(_map[i,j].gridPosition, playerSpawnCell);
-						_map[i, j] = targetMap.GetTile(_map[i, j].gridPosition) as CellData;
-					}
-					else if(_map[i,j].cellType == CellTypes.EnemySpawn)
-					{
-						targetMap.SetTile(_map[i,j].gridPosition, spawnCell);
-						_map[i, j] = targetMap.GetTile(_map[i, j].gridPosition) as CellData;
-					}
-					else if(_map[i,j].cellType == CellTypes.Exit)
-					{
-						targetMap.SetTile(_map[i,j].gridPosition, exitCell);
-						_map[i, j] = targetMap.GetTile(_map[i, j].gridPosition) as CellData;
-					}
+					*/
 				}
 			}
 		}
@@ -359,9 +338,9 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				if (wallRegion.Count < wallThresholdSize) {
 					foreach (Vector3Int tile in wallRegion) {
 						var newTile = Instantiate(groundCell);
+						//targetMap.SetTile(tile, newTile);
 						_map[tile.x, tile.y] = newTile;
 						//newTile.gridPosition = tile;
-						targetMap.SetTile(tile, newTile);
 					}
 				}
 			}
@@ -374,9 +353,9 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				if (roomRegion.Count < roomThresholdSize) {
 					foreach (Vector3Int tile in roomRegion) {
 						var newTile = Instantiate(wallCell);
+						//targetMap.SetTile(tile, newTile);
 						_map[tile.x, tile.y] = newTile;
 						//newTile.gridPosition = tile;
-						targetMap.SetTile(tile, newTile);
 					}
 				}
 				else {
@@ -478,9 +457,9 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 						if (GridUtils.IsInMapRange(drawX, drawY, _map))
 						{
 							var newTile = Instantiate(cell);
+							//targetMap.SetTile(new Vector3Int(drawX, drawY, 0), newTile);
 							_map[drawX, drawY] = newTile;
 							//newTile.gridPosition = new Vector3Int(drawX, drawY, 0);
-							targetMap.SetTile(new Vector3Int(drawX, drawY, 0), newTile);
 						}
 					}
 				}
@@ -539,6 +518,21 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				}
 			}
 			return tiles;
+		}
+		private void DrawTilemap(CellData[,] cellMap)
+		{
+			targetMap.size = new Vector3Int(cellMap.GetLength(0), cellMap.GetLength(1), 1);
+			targetMap.origin = new Vector3Int(0, 0, 0);
+			targetMap.ClearAllTiles();
+			targetMap.CompressBounds();
+			targetMap.RefreshAllTiles();
+			for (var i = 0; i < cellMap.GetLength(0); i++)
+			{
+				for (var j = 0; j < cellMap.GetLength(1); j++)
+				{
+					targetMap.SetTile(new Vector3Int(i, j), _map[i,j]);
+				}
+			}
 		}
 
 		#endregion

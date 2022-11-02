@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
 using DungeonAutomata._Project.Scripts.Controllers;
@@ -76,20 +78,24 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			Thirst++;
 			playerPos = _mapManager.GetPlayerPosition();
 			
+			_visibleCells = GridUtils.GetCellsInRadius(CurrentTile, _viewDistance, _cellMap);
 			//Debugging enemy vision, not efficient at all and should be using highlight map later
 			if (_visibleCells?.Count != 0)
 			{
-				StartCoroutine(PaintVisibleTiles(Color.white));
+				var cellPositions = _visibleCells.Select(cell => cell.gridPosition).ToList();
+				StartCoroutine(PaintCells(cellPositions, Color.white));
 			}
-			//TODO: decouple from mapmanager by using static/position based version
-			//var cellsInRange = GridUtils.GetCellRadius(CurrentTile, _viewDistance);
-			_visibleCells = GridUtils.GetCellsInRadius(CurrentTile, _viewDistance, _cellMap);
-			//Check for player
 			if (GridUtils.GetCellDistance(playerPos, CurrentTile) <= AggroDistance)
 			{
 				CurrentTarget = LookForPlayer();
 			}
+			else
+			{
+				CurrentTarget = LookForCellType(targetType);
+			}
+			//Check for player
 			//Check for food and water
+			/*
 			else if (Hunger>50)
 			{
 				targetType = CellTypes.ItemSpawn;
@@ -99,30 +105,32 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				targetType = CellTypes.Water;
 			}
 			targetType = CellTypes.ItemSpawn;
-
-			Debug.Log("Moving enemy unit: " + UnitName);
-			CurrentTarget = LookForCellType(targetType);
-			_controller.MoveUnit(CurrentTarget);
+			*/
+			if(CurrentTarget != null)
+				_controller.MoveUnit(CurrentTarget);
 			_eventManager.InvokeUnitAction(this);
 		}
 
-		private IEnumerator PaintVisibleTiles(Color color)
+		private IEnumerator PaintCells(List<Vector3Int> cells, Color color)
 		{
-			if (_visibleCells != null)
-				foreach (var cell in _visibleCells)
+			if (cells != null)
+			{
+				foreach (var cell in cells)
 				{
-					_tilemap.SetColor(cell.gridPosition, color);
+					_tilemap.SetColor(cell, color);
+					CommonUtils.GetWaitForSeconds(0.1f);
 				}
+			}
 			yield break;
 		}
 
 		private Vector3Int LookForCellType(CellTypes cellType)
 		{
 			var cellTarget = _visibleCells.Find(x => x.cellType == cellType);
-			StartCoroutine( PaintVisibleTiles(Color.red));
 			if (cellTarget != null)
 			{
 				var los = GetUnitSight(CurrentTile, cellTarget.gridPosition);
+				StartCoroutine( PaintCells(los, Color.red));
 				if (los.Contains(cellTarget.gridPosition))
 				{
 					return los[0];
@@ -133,7 +141,6 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		private Vector3Int LookForPlayer()
 		{
-			Debug.Log("Looking for player");
 			var cellTarget = _mapManager.GetPlayer();
 			var dist = GridUtils.GetCellDistance(CurrentTile, playerPos);
 			if (cellTarget != null)
@@ -156,7 +163,6 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Damage(int dmg)
 		{
-			Debug.Log("Enemy took " + dmg + " damage!");
 			CurrentHP -= dmg;
 		}
 

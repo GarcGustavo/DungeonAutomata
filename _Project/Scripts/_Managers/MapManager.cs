@@ -33,9 +33,9 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private List<ItemUnit> _items;
 		private List<Vector3Int> _enemySpawnPoints;
 		private List<Vector3Int> _itemSpawnPoints;
-		private List<Vector3Int> _visibleCells = new List<Vector3Int>();
+		private List<Vector3Int> _visibleCells;
 	
-		//Main reference to get occupant info through
+		//Main reference point to get occupant info from
 		private CellData[,] _gridMap;
 		public static MapManager Instance { get; private set; }
 
@@ -57,7 +57,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_items = new List<ItemUnit>();
 			_enemies = new List<EnemyUnit>();
 			_unitsToMove = new List<IUnit>();
-			//_eventManager.OnStartGame += SpawnPlayer;
+			_visibleCells = new List<Vector3Int>();
 			_gridMap = new CellData[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
 			_eventManager.OnUnitAction += CheckUnitsToMove;
 			_eventManager.OnAttack += DamageCells;
@@ -112,8 +112,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			highLightMap.ClearAllTiles();
 			highLightMap.RefreshAllTiles();
 			SpawnPlayer();
-			SpawnEnemies();
-			SpawnItems();
+			//SpawnEnemies();
+			//SpawnItems();
 		}
 
 		public void ResetMap()
@@ -149,21 +149,6 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			{
 				highLightMap.SetTile(visibleCell, highLightTile);
 			}
-		}
-
-		public List<CellData> GetNeighborTiles(Vector3Int position)
-		{
-			var neighbors = new List<CellData>();
-			var up = position + Vector3Int.up;
-			var down = position + Vector3Int.down;
-			var left = position + Vector3Int.left;
-			var right = position + Vector3Int.right;
-		
-			if (tileMap.HasTile(up)) neighbors.Add(_gridMap[up.x, up.y]);
-			if (tileMap.HasTile(down)) neighbors.Add(_gridMap[down.x, down.y]);
-			if (tileMap.HasTile(left)) neighbors.Add(_gridMap[left.x, left.y]);
-			if (tileMap.HasTile(right)) neighbors.Add(_gridMap[right.x, right.y]);
-			return neighbors;
 		}
 
 		//Convert unity tilemap to 2d array for easier manipulation, for adding premade rooms later (needs refactor)

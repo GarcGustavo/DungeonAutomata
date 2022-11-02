@@ -10,6 +10,7 @@ using DungeonAutomata._Project.Scripts.Utilities;
 using MoreMountains.Feedbacks;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using static DungeonAutomata._Project.Scripts.Utilities.GridUtils;
 
 namespace DungeonAutomata._Project.Scripts.Controllers
 {
@@ -166,13 +167,6 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			MoveUnit(nextMove);
 		}
 
-		private float GetDistance(Vector3Int startPosition, Vector3Int targetPosition)
-		{
-			var distance = Mathf.Abs(startPosition.x - targetPosition.x) 
-			               + Mathf.Abs(startPosition.y - targetPosition.y);
-			return distance;
-		}
-
         private IEnumerator FindOptimalPath(Vector3Int position)
         {
             var search_cells = new List<Vector3Int>();
@@ -181,8 +175,8 @@ namespace DungeonAutomata._Project.Scripts.Controllers
             var previous_cells = new Dictionary<Vector3Int, Vector3Int>();
             
             var start = _currentPosition;
-            var h_score = GetDistance(_currentPosition, position); // n to target
-            var g_score = GetDistance(start, _currentPosition); // start to n
+            var h_score = GetCellDistance(_currentPosition, position); // n to target
+            var g_score = GetCellDistance(start, _currentPosition); // start to n
             var f_score = h_score + g_score;
             
             search_cells.Add(start);
@@ -191,8 +185,8 @@ namespace DungeonAutomata._Project.Scripts.Controllers
                 var current = search_cells[0];
                 foreach (var cell in search_cells)
                 {
-                    var new_h = GetDistance(cell, position);
-                    var new_g = GetDistance(start, cell);
+                    var new_h = GetCellDistance(cell, position);
+                    var new_g = GetCellDistance(start, cell);
                     var new_f = new_h + new_g;
                     if ( new_f < f_score || (new_h < h_score && new_f.Equals(f_score)) )
                     {
@@ -223,13 +217,13 @@ namespace DungeonAutomata._Project.Scripts.Controllers
                     MoveUnit(path_stack.Pop() - _currentPosition);
                 }
                 
-                var neighbors = _mapManager.GetNeighborTiles(current);
+                var neighbors = GridUtils.GetAdjacentCells(current, cells);
                 foreach (var neighbor in neighbors)
                 {
                     if (neighbor.isEmpty && !processed_cells.Contains(neighbor.gridPosition))
                     {
-                        var tentative_g = g_score + GetDistance(current, neighbor.gridPosition);
-                        var neighbor_g = GetDistance(neighbor.gridPosition, position);
+                        var tentative_g = g_score + GetCellDistance(current, neighbor.gridPosition);
+                        var neighbor_g = GetCellDistance(neighbor.gridPosition, position);
                         var in_search = search_cells.Contains(neighbor.gridPosition);
                         if (!in_search || tentative_g < neighbor_g)
                         {
@@ -237,7 +231,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
                             g_score = tentative_g;
                             if (!in_search)
                             {
-                                h_score = GetDistance(neighbor.gridPosition, position);
+                                h_score = GetCellDistance(neighbor.gridPosition, position);
                                 search_cells.Add(neighbor.gridPosition);
                             }
                         }

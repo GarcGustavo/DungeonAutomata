@@ -83,6 +83,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 					                                     + "Health: "
 					                                     + combatUnit.CurrentHP + "/"
 					                                     + combatUnit.MaxHP + "\n";
+					//Only for debugging purposes, remove later
+					if (target.GetType() == typeof(EnemyUnit))
+					{
+						var enemyUnit = (EnemyUnit) target;
+						_unitInfoText.text += "Target: " + enemyUnit.CurrentTarget + "\n";
+					}
 				}
 				else
 				{

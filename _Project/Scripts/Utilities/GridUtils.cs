@@ -111,6 +111,44 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			return shapeCells;
 		}
 
+		public static List<CellData> GetAdjacentCells(Vector3Int position, CellData[,] cellMap)
+		{
+			var neighbors = new List<CellData>();
+			var up = position + Vector3Int.up;
+			var down = position + Vector3Int.down;
+			var left = position + Vector3Int.left;
+			var right = position + Vector3Int.right;
+			
+			if(IsInMapRange(up, cellMap))
+				neighbors.Add(cellMap[up.x, up.y]);
+			if(IsInMapRange(down, cellMap))
+				neighbors.Add(cellMap[down.x, down.y]);
+			if(IsInMapRange(left, cellMap))
+				neighbors.Add(cellMap[left.x, left.y]);
+			if(IsInMapRange(right, cellMap))
+				neighbors.Add(cellMap[right.x, right.y]);
+			
+			return neighbors;
+		}
+
+		//Gets neighbor cells, including diagonals
+		public static List<CellData> GetNeighborCells(Vector3Int pos, CellData[,] cellMap, CellTypes cellType)
+		{
+			var cellList = new List<CellData>();
+			for (var i = pos.x - 1; i <= pos.x + 1; i++)
+			{
+				for (var j = pos.y - 1; j <= pos.y + 1; j++)
+				{
+					if (i != pos.x || j != pos.y)
+					{
+						if(IsInMapRange(pos, cellMap) && cellMap[i,j].cellType == cellType)
+							cellList.Add(cellMap[i,j]);
+					}
+				}
+			}
+			return cellList;
+		}
+
 		public static bool IsInMapRange<T>(Vector3Int position, T[,] map) 
 		{
 			return position.x >= 0 
@@ -124,7 +162,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			return x >= 0 && x < map.GetLength(0) && y >= 0 && y < map.GetLength(1);
 		}
 
-		//Testing Bresenhams Line Algorithm
+		//Bresenhams Line Algorithm
 		public static List<Vector3Int> GetLineOfSight(Vector3Int source, Vector3Int target)
 		{
 			List<Vector3Int> line = new List<Vector3Int> ();
@@ -175,60 +213,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 
 			return line;
-		}
-		//TODO: Refactor/fix - bug where cellgrid positions not being the same as world positions
-		private static void Swap<T>(ref T lhs, ref T rhs)
-		{
-			T temp;
-			temp = lhs;
-			lhs = rhs;
-			rhs = temp;
-		}
-		
-		//TODO: delete after testing custom implementation
-		/// <summary>
-		///     The plot function delegate
-		/// </summary>
-		/// <param name="x">The x co-ord being plotted</param>
-		/// <param name="y">The y co-ord being plotted</param>
-		/// <returns>True to continue, false to stop the algorithm</returns>
-		public delegate bool PlotFunction(int x, int y);
-
-		/// <summary>
-		///     Plot the line from (x0, y0) to (x1, y1)
-		/// </summary>
-		/// <param name="x0">The start x</param>
-		/// <param name="y0">The start y</param>
-		/// <param name="x1">The end x</param>
-		/// <param name="y1">The end y</param>
-		/// <param name="plot">The plotting function (if this returns false, the algorithm stops early)</param>
-		public static void Line(int x0, int y0, int x1, int y1, PlotFunction plot)
-		{
-			var steep = Math.Abs(y1 - y0) > Math.Abs(x1 - x0);
-			if (steep)
-			{
-				Swap(ref x0, ref y0);
-				Swap(ref x1, ref y1);
-			}
-
-			if (x0 > x1)
-			{
-				Swap(ref x0, ref x1);
-				Swap(ref y0, ref y1);
-			}
-
-			int dX = x1 - x0, dY = Math.Abs(y1 - y0), err = dX / 2, ystep = y0 < y1 ? 1 : -1, y = y0;
-
-			for (var x = x0; x <= x1; ++x)
-			{
-				if (!(steep ? plot(y, x) : plot(x, y))) return;
-				err = err - dY;
-				if (err < 0)
-				{
-					y += ystep;
-					err += dX;
-				}
-			}
 		}
 		
 		#endregion
