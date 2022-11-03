@@ -1,9 +1,12 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts.Data;
 using DungeonAutomata._Project.Scripts.GridComponents;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Diagnostics;
 using UnityEngine.Tilemaps;
 using Random = System.Random;
 
@@ -40,11 +43,12 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		[SerializeField] private  int spawnRadius = 4;
 		[SerializeField] private  int enemyAmount = 10;
 		[SerializeField] private  int itemAmount = 10;
+		[SerializeField] private int roomAmount = 10;
 
 		//Cellular automata maps
 		private CellData[,] _map;
 		private CellData[,] _mapBuffer;
-		private List<int[,]> _rooms;
+		private List<List<Vector3Int>> _rooms;
 
 		#region API
 		
@@ -58,8 +62,9 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			_map = new CellData[width,height];
 			RandomFillMap();
 			SmoothMap(smoothingIterations);
-			GenerateRooms(5);
-			//ProcessMap();
+			//Modify to avoid backtracking by adding cyclic paths
+			GenerateRooms(roomAmount);
+			ProcessMap();
 			//CreateMapBorders();
 			//SetSpawns();
 			DrawTilemap(_map);
@@ -73,8 +78,30 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			targetMap.RefreshAllTiles();
 			
 			highlightTilemap.ClearAllTiles();
-			targetMap.CompressBounds();
-			targetMap.RefreshAllTiles();
+			highlightTilemap.CompressBounds();
+			highlightTilemap.RefreshAllTiles();
+		}
+
+		//For debugging purposes
+		[Button]
+		private void DrawDijsktraMap()
+		{
+			var dijkstraMap = GridUtils.GetDijkstraMap(Vector3Int.zero, _map);
+			for (int i = 0; i < dijkstraMap.GetLength(0); i++)
+			{
+				for (int j = 0; j < dijkstraMap.GetLength(1); j++)
+				{
+					if (_map[i, j] != null)
+					{
+						var cell = _map[i, j];
+						if (dijkstraMap[i,j] == -1)
+							targetMap.SetColor(cell.gridPosition, Color.white);
+						else
+							targetMap.SetColor(cell.gridPosition, 
+								Color.Lerp(Color.blue, Color.red, 35f/dijkstraMap[i, j]));
+					}
+				}
+			}
 		}
 		
 		//Getters to be accessed through manager singleton in order to decouple map generator from other systems
@@ -106,6 +133,11 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		public List<Vector3Int> GetItemSpawnPositions()
 		{
 			return _itemSpawnPositions;
+		}
+
+		public List<List<Vector3Int>> GetRooms()
+		{
+			return _rooms;
 		}
 		
 		#endregion
@@ -174,63 +206,138 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 		}
 
-		private void GenerateRooms(int roomAmount)
+		private void GenerateRooms(int amount)
 		{
-			_rooms = new List<int[,]>();
-			for (int i = 0; i < roomAmount; i++)
+			_rooms = new List<List<Vector3Int>>();
+			var random = new Random(seed);
+			var roomList = new List<int[,]>();
+			//Generate an initial batch of rooms, might expand later for determining biomes
+			for (int i = 0; i < amount; i++)
 			{
-				_mapBuffer = _map;
-				var isValidOrigin = false;
-				var placementAttempts = 0;
-				var random = new Random(seed + i);
-				var roomWidth = random.Next(5, 25);
-				var roomHeight = random.Next(5, 25);
-				var room = new int[roomWidth, roomHeight];
-				for (int x = 0; x < roomWidth; x++)
-				{
-					for (int y = 0; y < roomHeight; y++)
-					{
-						room[x, y] = 1;
-					}
-				}
+				var room = CreateRoom(random.Next(3, width/6), random.Next(3, height/6));
+				roomList.Add(room);
+			}
+			foreach (var room in roomList)
+			{
+				//TODO: finish BSP implementation
+				//var splitMap = SplitMap(_map, roomList);
+				PlaceRoom(room, _map);
+			}
+		}
+
+		private void PlaceRoom(int[,] room, CellData[,] map)
+		{
+			Random random = new Random(seed);
+			var mapBuffer = map;
+			var roomFits = false;
+			var placementAttempts = 0;
+			var roomWidth = room.GetLength(0);
+			var roomHeight = room.GetLength(1);
+			while (!roomFits)
+			{
+				if (placementAttempts > 100)
+					break;
 				var roomOrigin = new Vector3Int(
-					random.Next(roomWidth + 1, width - roomWidth - 1), 
-					random.Next(roomHeight + 1, height - roomHeight - 1));
-				
-				var roomCells = GridUtils.GetCellsInShape(roomOrigin, room, _mapBuffer);
+					random.Next(roomWidth + 1, map.GetLength(0) - roomWidth - 1),
+					random.Next(roomHeight + 1, map.GetLength(1) - roomHeight - 1));
 
-				while (!isValidOrigin)
+				var roomCells = GridUtils.GetCellsInShape(roomOrigin, room, mapBuffer);
+
+				foreach (var cell in roomCells)
 				{
-					if (placementAttempts > 100)
-					{
-						placementAttempts = 0;
+					roomFits = (cell.cellType == CellTypes.Wall);
+					if (!roomFits)
 						break;
-					}
-					placementAttempts++;
-					isValidOrigin = true;
-					
-					foreach (var cell in roomCells)
-					{
-						if (cell.cellType != CellTypes.Wall)
-						{
-							roomOrigin.x = random.Next(roomWidth + 1, width - roomWidth - 1);
-							roomOrigin.y = random.Next(roomWidth + 1, height - roomHeight - 1);
-							roomCells = GridUtils.GetCellsInShape(roomOrigin, room, _mapBuffer);
-							isValidOrigin = false;
-							break;
-						}
-					}
+				}
 
-					if (isValidOrigin)
+				if (roomFits)
+				{
+					placementAttempts = 0;
+					MergeRoomToMap(roomOrigin, room);
+				}
+
+				placementAttempts++;
+				random = new Random(seed + placementAttempts);
+			}
+		}
+
+		//Binary space partitioning
+		private CellData[,] SplitMap(CellData[,] map, List<int[,]> roomList)
+		{
+			var mapWidth = map.GetLength(0);
+			var mapHeight = map.GetLength(1);
+			var newMap = new CellData[mapWidth, mapHeight];
+			var left = new CellData[mapWidth, mapHeight];
+			var right = new CellData[mapWidth, mapHeight];
+			var direction = new Random(seed).Next(0, 2);
+			var splitPoint = new Random(seed).Next(1, direction == 0 ? mapWidth - 1 : mapHeight - 1);
+			var timesToSplit = new Random(seed).Next(1, 3);
+			
+			//Split map in half
+			for (int i = 0; i < timesToSplit; i++)
+			{
+				if (direction == 0)
+				{
+					for (int x = 0; x < mapWidth; x++)
 					{
-						placementAttempts = 0;
-						_rooms.Add(room);
-						foreach (var cell in GridUtils.GetPositionsInShape(roomOrigin, room))
+						for (int y = 0; y < mapHeight; y++)
 						{
-							_map[cell.x, cell.y] = Instantiate(groundCell);
+							if (x < splitPoint)
+							{
+								newMap[x, y] = map[x, y];
+								left[x, y] = map[x, y];
+							}
+							else
+							{
+								newMap[x, y] = Instantiate(wallCell);
+							}
 						}
 					}
 				}
+				else
+				{
+					for (int x = 0; x < mapWidth; x++)
+					{
+						for (int y = 0; y < mapHeight; y++)
+						{
+							if (y < splitPoint)
+							{
+								newMap[x, y] = map[x, y];
+								right[x, y] = map[x, y];
+							}
+							else
+							{
+								newMap[x, y] = Instantiate(wallCell);
+							}
+						}
+					}
+				}
+				direction = new Random(seed).Next(0, 2);
+				splitPoint = new Random(seed).Next(1, direction == 0 ? mapWidth - 1 : mapHeight - 1);
+			}
+			return newMap;
+		}
+		
+		private int[,] CreateRoom(int roomWidth, int roomHeight)
+		{
+			var room = new int[roomWidth, roomHeight];
+			for (int x = 0; x < roomWidth; x++)
+			{
+				for (int y = 0; y < roomHeight; y++)
+				{
+					room[x, y] = 1;
+				}
+			}
+			return room;
+		}
+		
+		private void MergeRoomToMap(Vector3Int origin, int[,] room)
+		{
+			var roomPositions = GridUtils.GetPositionsInShape(origin, room);
+			_rooms.Add(roomPositions);
+			foreach (var cell in roomPositions)
+			{
+				_map[cell.x, cell.y] = Instantiate(groundCell);
 			}
 		}
 		
@@ -335,8 +442,10 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			int wallThresholdSize = 50;
 
 			foreach (List<Vector3Int> wallRegion in wallRegions) {
-				if (wallRegion.Count < wallThresholdSize) {
-					foreach (Vector3Int tile in wallRegion) {
+				if (wallRegion.Count < wallThresholdSize) 
+				{
+					foreach (Vector3Int tile in wallRegion) 
+					{
 						var newTile = Instantiate(groundCell);
 						//targetMap.SetTile(tile, newTile);
 						_map[tile.x, tile.y] = newTile;
@@ -531,6 +640,14 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				for (var j = 0; j < cellMap.GetLength(1); j++)
 				{
 					targetMap.SetTile(new Vector3Int(i, j), _map[i,j]);
+				}
+			}
+
+			foreach (var room in _rooms)
+			{
+				foreach (var cell in room)
+				{
+					targetMap.SetColor(cell, Color.red);
 				}
 			}
 		}

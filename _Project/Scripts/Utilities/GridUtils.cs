@@ -46,6 +46,44 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			var y = Mathf.Abs(pos1.y - pos2.y);
 			return x + y;
 		}
+		//Djikstra map to replace A(*) pathfinding
+		public static int[,] GetDijkstraMap(Vector3Int goal, CellData[,] cellMap)
+		{
+			var newMap = new int[cellMap.GetLength(0), cellMap.GetLength(1)];
+			
+			for (var x = 0; x < cellMap.GetLength(0); x++)
+			{
+				for (var y = 0; y < cellMap.GetLength(1); y++)
+				{
+					if(cellMap[x,y].isEmpty)
+						newMap[x, y] = GetCellDistance(new Vector3Int(x, y, 0), goal);
+					else
+						newMap[x,y] = -1;
+				}
+			}
+			return newMap;
+		}
+
+		public static Vector3Int GetLowestCostAdjacentCell(Vector3Int position, ref int[,] dijkstraMap)
+		{
+			var up = position + Vector3Int.up;
+			var down = position + Vector3Int.down;
+			var left = position + Vector3Int.left;
+			var right = position + Vector3Int.right;
+			var cells = new List<Vector3Int> {up, down, left, right};
+			var lowestCost = int.MaxValue;
+			var finalPos = position;
+
+			foreach (var cell in cells)
+			{
+				if (dijkstraMap[cell.x, cell.y] < lowestCost && dijkstraMap[cell.x, cell.y] != -1)
+				{
+					lowestCost = dijkstraMap[cell.x, cell.y];
+					finalPos = cell;
+				}
+			}
+			return finalPos;
+		}
 
 		public static List<Vector3Int> GetPositionsInRadius(Vector3Int pos, int radius)
 		{
