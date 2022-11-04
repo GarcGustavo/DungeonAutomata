@@ -63,6 +63,28 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 			return newMap;
 		}
+		public static int[,] GetDijkstraMap(List<Vector3Int> goals, CellData[,] cellMap)
+		{
+			var newMap = new int[cellMap.GetLength(0), cellMap.GetLength(1)];
+			
+			for (var x = 0; x < cellMap.GetLength(0); x++)
+			{
+				for (var y = 0; y < cellMap.GetLength(1); y++)
+				{
+					if (cellMap[x, y].isEmpty)
+					{
+						foreach (var goal in goals)
+						{
+							newMap[x, y] += GetCellDistance(new Vector3Int(x, y, 0), goal);
+							newMap[x, y] /= goals.Count;
+						}
+					}
+					else
+						newMap[x,y] = -1;
+				}
+			}
+			return newMap;
+		}
 
 		public static Vector3Int GetLowestCostAdjacentCell(Vector3Int position, ref int[,] dijkstraMap)
 		{

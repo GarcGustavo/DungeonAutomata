@@ -1,8 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
 using DungeonAutomata._Project.Scripts.Controllers;
 using DungeonAutomata._Project.Scripts.Data;
+using DungeonAutomata._Project.Scripts.Utilities;
 using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts.GridComponents
@@ -44,6 +46,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			_manager = GameManager.Instance;
 			_eventManager = EventManager.Instance;
 			_inventory = InventoryManager.Instance;
+			_mapManager = MapManager.Instance;
 			_eventManager.OnPlayerDamaged += Damage;
 			_eventManager.OnPlayerAction += UseEnergy;
 			_eventManager.OnPlayerTurnStart += RefillEnergy;
@@ -161,5 +164,6 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				_eventManager.InvokePlayerAction();
 			}
 		}
+		
 	}
 }

@@ -12,6 +12,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 	[RequireComponent(typeof(TileMapGenerator))]
 	public class MapManager : MonoBehaviour
 	{
+		public static MapManager Instance { get; private set; }
+		
 		[SerializeField] private Grid grid;
 		[SerializeField] private Tilemap[] roomMaps;
 		[SerializeField] private Tilemap tileMap;
@@ -37,7 +39,15 @@ namespace DungeonAutomata._Project.Scripts._Managers
 	
 		//Main reference point to get occupant info from
 		private CellData[,] _gridMap;
-		public static MapManager Instance { get; private set; }
+		
+		//Objectives for Dijkstra map algorithms
+		private int[,] _playerMap;
+		private int[,] _enemyMap;
+		private int[,] _itemMap;
+		private int[,] _foodMap;
+		private int[,] _waterMap;
+		private int[,] _preyMap;
+		private int[,] _predatorMap;
 
 		private void Awake()
 		{
@@ -59,6 +69,14 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_unitsToMove = new List<IUnit>();
 			_visibleCells = new List<Vector3Int>();
 			_gridMap = new CellData[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			_playerMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			_enemyMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			_itemMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			_foodMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			_waterMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			_preyMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			_predatorMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			
 			_eventManager.OnUnitAction += CheckUnitsToMove;
 			_eventManager.OnAttack += DamageCells;
 			_eventManager.OnUnitDeath += RemoveUnitToMove;
@@ -151,24 +169,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			}
 		}
 
-		//Convert unity tilemap to 2d array for easier manipulation, for adding premade rooms later (needs refactor)
-		private int[,] ExtractTileMapData(Tilemap tileMap)
-		{
-			var roomTilemap = roomMaps[Random.Range(0, roomMaps.Length)];
-			var roomData = new int[roomTilemap.size.x, roomTilemap.size.y];
-			for (var i = 0; i < roomTilemap.size.x; i++)
-			for (var j = 0; j < roomTilemap.size.y; j++)
-				if (roomTilemap.GetTile(new Vector3Int(i, j, 0)) != null)
-					//var tile = CreateInstance<Tile>();
-					//tile.sprite = obstacleSprites[Random.Range(0, obstacleSprites.Length)];
-					//tileMap.SetTile(new Vector3Int(i, j, 0), tile);
-					roomData[i, j] = 1;
-			return roomData;
-		}
-
-		//-------------------------------------------------------------------
-		// Spawn functions
-		//-------------------------------------------------------------------
+		#region SPAWNERS
+		
 		private void SpawnPlayer()
 		{
 			_playerSpawnPoint = tileMapGenerator.GetPlayerSpawnPosition();
@@ -219,10 +221,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				_items.Add(item);
 			}
 		}
+		
+		#endregion
 
-		//-------------------------------------------------------------------
-		// Public getters
-		//-------------------------------------------------------------------
+		#region GETS
+		
 		public CellData[,] GetCellMap()
 		{
 			return tileMapGenerator.GetCellMap();
@@ -242,5 +245,82 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			return _player.CurrentTile;
 		}
+
+		#endregion
+
+		#region VALUEMAPS
+		private int[,] UpdatePlayerMap()
+		{
+			return GridUtils.GetDijkstraMap(_player.CurrentTile, tileMapGenerator.GetCellMap());
+		}
+		
+		private int[,] UpdateEnemyMap()
+		{
+			return GridUtils.GetDijkstraMap(_player.CurrentTile, tileMapGenerator.GetCellMap());
+		}
+		
+		private int[,] UpdateItemMap(List<Vector3Int> itemPositions)
+		{
+			return GridUtils.GetDijkstraMap(itemPositions, tileMapGenerator.GetCellMap());
+		}
+		
+		private int[,] UpdatePredatorMap(List<Vector3Int> predatorPositions)
+		{
+			return GridUtils.GetDijkstraMap(predatorPositions, tileMapGenerator.GetCellMap());
+		}
+		
+		private int[,] UpdatePreyMap(List<Vector3Int> preyPositions)
+		{
+			return GridUtils.GetDijkstraMap(preyPositions, tileMapGenerator.GetCellMap());
+		}
+		
+		private int[,] UpdateFoodMap(List<Vector3Int> foodPositions)
+		{
+			return GridUtils.GetDijkstraMap(foodPositions, tileMapGenerator.GetCellMap());
+		}
+		
+		private int[,] UpdateWaterMap(List<Vector3Int> waterPositions)
+		{
+			return GridUtils.GetDijkstraMap(waterPositions, tileMapGenerator.GetCellMap());
+		}
+
+		public int[,] GetPlayerMap()
+		{
+			return _playerMap;
+		}
+		
+		public int[,] GetEnemyMap()
+		{
+			return _enemyMap;
+		}
+		
+		public int[,] GetItemMap()
+		{
+			return _itemMap;
+		}
+		
+		public int[,] GetPredatorMap()
+		{
+			return _predatorMap;
+		}
+		
+		public int[,] GetPreyMap()
+		{
+			return _preyMap;
+		}
+		
+		public int[,] GetFoodMap()
+		{
+			return _foodMap;
+		}
+		
+		public int[,] GetWaterMap()
+		{
+			return _waterMap;
+		}
+
+		#endregion
+		
+		
 	}
 }

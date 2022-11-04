@@ -18,7 +18,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 	{
 		[SerializeField] private float moveCD = .2f;
 		private Tilemap tilemap;
-		private CellData[,] cells;
+		private CellData[,] cellMap;
 
 		//Using feedbacks from MoreMountains for movement effects
 		[SerializeField] private MMFeedbacks feedbacks;
@@ -49,7 +49,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		public void InitializeGrid()
 		{
 			tilemap = _mapManager.GetTileMap();
-			cells = _mapManager.GetCellMap();
+			cellMap = _mapManager.GetCellMap();
 		}
 
 		public void SetPosition(Vector3Int position)
@@ -63,9 +63,9 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			_currentPosition = _unit.CurrentTile;
 			if (tilemap.HasTile(pos))
 			{
-				cells = _mapManager.GetCellMap();
-				var previousTile = cells[_currentPosition.x, _currentPosition.y];
-				var tile = cells[pos.x, pos.y];
+				cellMap = _mapManager.GetCellMap();
+				var previousTile = cellMap[_currentPosition.x, _currentPosition.y];
+				var tile = cellMap[pos.x, pos.y];
 				if (!CheckTile(tile)) 
 					return;
 				StartCoroutine(GridUtils.MoveToPosition(transform, pos, moveCD));
@@ -217,7 +217,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
                     MoveUnit(path_stack.Pop() - _currentPosition);
                 }
                 
-                var neighbors = GridUtils.GetAdjacentCells(current, cells);
+                var neighbors = GridUtils.GetAdjacentCells(current, cellMap);
                 foreach (var neighbor in neighbors)
                 {
                     if (neighbor.isEmpty && !processed_cells.Contains(neighbor.gridPosition))
