@@ -1,3 +1,4 @@
+using DungeonAutomata._Project.Scripts.Data;
 using DungeonAutomata._Project.Scripts.GridComponents;
 using UnityEngine;
 
@@ -5,7 +6,8 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 {
 	public interface IUnit
 	{
-		string UnitName { get; set; }
+		public string UnitName { get; set; }
+		public string Description { get; set; }
 		public Vector3Int CurrentTile { get; set; }
 		public void InitializeUnit();
 		public void Move(Vector3Int position);

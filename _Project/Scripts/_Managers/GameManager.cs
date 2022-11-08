@@ -27,6 +27,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private GameState _previousState;
 		private GameState _state;
 		private int _turnCount = 0;
+		private List<ICommand> _actionList;
 
 		private enum GameState
 		{
@@ -57,13 +58,14 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_uiManager = UIManager.Instance;
 			_mapManager = MapManager.Instance;
 			_eventManager.OnStartGame += SpawnPlayer;
-			_eventManager.OnPlayerMove += UpdatePlayerPosition;
-			_eventManager.OnPlayerTurnEnd += PlayerTurnEnd;
+			//_eventManager.OnPlayerMove += UpdatePlayerPosition;
 			_eventManager.OnMenu += ToggleMenu;
 			_eventManager.OnPlayerGoalReached += NextStage;
 			_eventManager.OnPlayerDeath += PlayerDeath;
-			_eventManager.OnEnemyTurnEnd += EnemyTurnEnd;
+			_eventManager.OnTurnEnd += TurnEnd;
+			_eventManager.OnTurnEnd += ExecuteCommands;
 			_inventory = new List<ItemUnit>();
+			_actionList = new List<ICommand>();
 			_state = GameState.PlayerTurn;
 			_previousState = _state;
 		}
@@ -109,18 +111,16 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		// State functions
 		//-------------------------------------------------------------------
 
-		private void PlayerTurnEnd()
+		private void TurnEnd()
 		{
-			if (_player.CurrentEnergy <= 0)
+			if (_state == GameState.PlayerTurn)
 			{
-				_player.SetMoveState(false);
 				StartCoroutine(UpdateGameState(GameState.EnemyTurn));
 			}
-		}
-
-		private void EnemyTurnEnd()
-		{
-			StartCoroutine(UpdateGameState(GameState.PlayerTurn));
+			else if (_state == GameState.EnemyTurn)
+			{
+				StartCoroutine(UpdateGameState(GameState.PlayerTurn));
+			}
 		}
 
 		private void ToggleMenu()
@@ -140,17 +140,20 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			_previousState = _state;
 			_state = newState;
-			Debug.Log("State: " + _state);
+			Debug.Log("Prev State: " + _previousState);
+			Debug.Log("Next State: " + _state);
 			switch (_state)
 			{
 				case GameState.PlayerTurn:
-					yield return GetWaitForSeconds(.2f);
+					//Execute commands registered by enemies in last turn
+					//ExecuteCommands();
+					yield return GetWaitForSeconds(.1f);
 					_eventManager.InvokePlayerTurnStart();
-					_player.SetMoveState(true);
 					break;
 				case GameState.EnemyTurn:
-					yield return GetWaitForSeconds(.2f);
-					_player.SetMoveState(false);
+					//Execute commands registered by player in last turn
+					//ExecuteCommands();
+					yield return GetWaitForSeconds(.1f);
 					_eventManager.InvokeEnemyTurnStart();
 					break;
 				case GameState.Lose:
@@ -170,7 +173,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void NextStage()
 		{
-			UpdateGameState(GameState.Win);
+			StartCoroutine(UpdateGameState(GameState.Win));
+			//UpdateGameState(GameState.Win);
 			_mapManager.ResetMap();
 			_mapManager.InitializeMap();
 		}
@@ -178,11 +182,6 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		//-------------------------------------------------------------------
 		// Update functions
 		//-------------------------------------------------------------------
-
-		private void UpdatePlayerPosition(Vector3Int player_pos)
-		{
-			//PlayerTurnEnd();
-		}
 
 		private void SpawnPlayer()
 		{
@@ -197,6 +196,24 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public PlayerUnit GetPlayer()
 		{
 			return _mapManager.GetPlayer();
+		}
+
+		public void ExecuteCommands()
+		{
+			Debug.Log("Executing " + _actionList.Count + " commands");
+			foreach (var command in _actionList)
+			{
+				StartCoroutine(command.Execute());
+				//yield return GetWaitForSeconds(command.Duration);
+			}
+			_actionList.Clear();
+			//_eventManager.InvokeTurnEnd();
+		}
+
+		public void RegisterCommand(ICommand command)
+		{
+			// Play around with order execution via unit stats later
+			_actionList.Add(command);
 		}
 	}
 }

@@ -34,6 +34,8 @@ namespace DungeonAutomata._Project.Scripts.Data
 		Health,
 		Mana,
 		Energy,
+		Hunger,
+		Thirst,
 		Level,
 		Exp,
 		Strength,

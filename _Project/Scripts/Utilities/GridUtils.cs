@@ -5,6 +5,7 @@ using DG.Tweening;
 using DungeonAutomata._Project.Scripts.Data;
 using UnityEngine;
 using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
+using Random = UnityEngine.Random;
 
 namespace DungeonAutomata._Project.Scripts.Utilities
 {
@@ -31,8 +32,10 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		public static IEnumerator MoveToPosition(Transform transform, Vector3 targetPosition, float duration)
 		{
 			if(DOTween.IsTweening(transform))
-				DOTween.Kill(transform);
-			transform.DOMove(targetPosition, duration).SetEase(Ease.Linear);
+				yield return null;
+				//DOTween.Kill(transform);
+			//transform.DOMove(targetPosition, duration).SetEase(Ease.Linear);
+			transform.DOMove(targetPosition, duration).SetEase(Ease.OutCubic);
 			yield return null;
 		}
 		
@@ -55,7 +58,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			{
 				for (var y = 0; y < cellMap.GetLength(1); y++)
 				{
-					if(cellMap[x,y].isEmpty)
+					if(cellMap[x,y].isWalkable)
 						newMap[x, y] = GetCellDistance(new Vector3Int(x, y, 0), goal);
 					else
 						newMap[x,y] = -1;
@@ -71,7 +74,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			{
 				for (var y = 0; y < cellMap.GetLength(1); y++)
 				{
-					if (cellMap[x, y].isEmpty)
+					if (cellMap[x, y].isWalkable)
 					{
 						foreach (var goal in goals)
 						{
@@ -84,6 +87,12 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				}
 			}
 			return newMap;
+		}
+		
+		public static Vector3Int GetRandomPosition(List<Vector3Int> roomPositions)
+		{
+			var randomIndex = Random.Range(0, roomPositions.Count);
+			return roomPositions[randomIndex];
 		}
 
 		public static Vector3Int GetLowestCostAdjacentCell(Vector3Int position, ref int[,] dijkstraMap)
@@ -223,7 +232,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		}
 
 		//Bresenhams Line Algorithm
-		public static List<Vector3Int> GetLineOfSight(Vector3Int source, Vector3Int target)
+		public static List<Vector3Int> GetLine(Vector3Int source, Vector3Int target)
 		{
 			List<Vector3Int> line = new List<Vector3Int> ();
 

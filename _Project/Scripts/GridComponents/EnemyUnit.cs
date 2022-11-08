@@ -5,12 +5,13 @@ using System.Linq;
 using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
+using DungeonAutomata._Project.Scripts.CommandSystem.Commands;
 using DungeonAutomata._Project.Scripts.Controllers;
 using DungeonAutomata._Project.Scripts.Data;
-using DungeonAutomata._Project.Scripts.Utilities;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Random = System.Random;
+using static DungeonAutomata._Project.Scripts.Utilities.GridUtils;
 
 namespace DungeonAutomata._Project.Scripts.GridComponents
 {
@@ -18,9 +19,14 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 	[RequireComponent(typeof(GridController2D))]
 	public class EnemyUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
+		[SerializeField] private EnemyData _enemyData;
+		[SerializeField] private int _viewDistance = 5;
+		
+		private GameManager _gameManager;
 		private MapManager _mapManager;
 		private EventManager _eventManager;
 		public string UnitName { get; set; }
+		public string Description { get; set; }
 		public int MaxHP { get; set; }
 		public int CurrentHP { get; set; }
 		public int Hunger { get; set; }
@@ -36,11 +42,10 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private CellData[,] _cellMap;
 		public bool CanMove { get; set; }
 		private GridController2D _controller;
-		[SerializeField] private int _viewDistance = 5;
-		[SerializeField] private EnemyData _enemyData;
 
 		private void Awake()
 		{
+			_gameManager = GameManager.Instance;
 			_mapManager = MapManager.Instance;
 			_eventManager = EventManager.Instance;
 			_controller = GetComponent<GridController2D>();
@@ -57,7 +62,17 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			MaxHP = _enemyData.Health;
 			CurrentHP = MaxHP;
 			CanMove = true;
+			SetDescription();
 			//_controller.InitializeGrid();
+		}
+		
+		private void SetDescription()
+		{
+			Description = $"Name: {_enemyData.name}\n" +
+			               $"HP: {CurrentHP}\n" +
+			               $"Hunger: {Hunger}\n" +
+			               $"Thirst: {Thirst}\n" +
+			               $"{_enemyData.description}\n";
 		}
 
 		private void UpdateState()
@@ -67,93 +82,51 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				Die();
 				return;
 			}
-			
 			_controller.InitializeGrid();
 			_cellMap = _mapManager.GetCellMap();
-			if (Hunger >= 100 || Thirst >= 100 || CurrentHP <= 0)
-			{
-				//Die();
-			}
 			Hunger++;
 			Thirst++;
-			playerPos = _mapManager.GetPlayerPosition();
-			
-			_visibleCells = GridUtils.GetCellsInRadius(CurrentTile, _viewDistance, _cellMap);
-			//Debugging enemy vision, not efficient at all and should be using highlight map later
-			if (_visibleCells?.Count != 0)
+			CurrentTarget = LookForPlayer();
+			if (CurrentTarget != null)
 			{
-				var cellPositions = _visibleCells.Select(cell => cell.gridPosition).ToList();
-				StartCoroutine(PaintCells(cellPositions, Color.white));
+				_gameManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
+				//Move(CurrentTarget);
 			}
-			if (GridUtils.GetCellDistance(playerPos, CurrentTile) <= AggroDistance)
-			{
-				CurrentTarget = LookForPlayer();
-			}
-			else
-			{
-				CurrentTarget = LookForCellType(targetType);
-			}
-			//Check for player
-			//Check for food and water
-			/*
-			else if (Hunger>50)
-			{
-				targetType = CellTypes.ItemSpawn;
-			}
-			else if (Thirst>50)
-			{
-				targetType = CellTypes.Water;
-			}
-			targetType = CellTypes.ItemSpawn;
-			*/
-			if(CurrentTarget != null)
-				_controller.MoveUnit(CurrentTarget);
 			_eventManager.InvokeUnitAction(this);
 		}
 
-		private IEnumerator PaintCells(List<Vector3Int> cells, Color color)
+		private void PaintCells(List<Vector3Int> cells, Color color)
 		{
 			if (cells != null)
 			{
 				foreach (var cell in cells)
 				{
 					_tilemap.SetColor(cell, color);
-					CommonUtils.GetWaitForSeconds(0.1f);
 				}
 			}
-			yield break;
-		}
-
-		private Vector3Int LookForCellType(CellTypes cellType)
-		{
-			var cellTarget = _visibleCells.Find(x => x.cellType == cellType);
-			if (cellTarget != null)
-			{
-				var los = GetUnitSight(CurrentTile, cellTarget.gridPosition);
-				StartCoroutine( PaintCells(los, Color.red));
-				if (los.Contains(cellTarget.gridPosition))
-				{
-					return los[0];
-				}
-			}
-			return Wander();
 		}
 
 		private Vector3Int LookForPlayer()
 		{
 			var cellTarget = _mapManager.GetPlayer();
-			var dist = GridUtils.GetCellDistance(CurrentTile, playerPos);
+			var valueMap = _mapManager.GetPlayerMap();
+			var nextCell = GetLowestCostAdjacentCell(CurrentTile, ref valueMap);
 			if (cellTarget != null)
 			{
-				var los = GetUnitSight(CurrentTile, cellTarget.CurrentTile);
-				if (los.Contains(cellTarget.CurrentTile) && dist <= AggroDistance)
+				var losCells = GetLine(CurrentTile, cellTarget.CurrentTile);
+				if(GetAdjacentCells(CurrentTile, _cellMap).Contains(_cellMap[playerPos.x, playerPos.y]))
+					return playerPos;
+				foreach (var cell in losCells)
 				{
-					Debug.Log("Moving to player");
-					return los[0];
+					if (_cellMap[cell.x, cell.y].cellType == CellTypes.Wall 
+					    && GetCellDistance(playerPos, CurrentTile) >= AggroDistance)
+					{
+						return Wander();
+					}
 				}
 			}
-			Debug.Log("Player too far");
-			return Wander();
+			playerPos = _mapManager.GetPlayerPosition();
+			return nextCell;
 		}
 
 		public void Move(Vector3Int position)
@@ -238,25 +211,10 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				target.Damage(1);
 			}
 		}
-		
-		//Testing Bresenhams Line Algorithm
-		private List<Vector3Int> GetUnitSight(Vector3Int source, Vector3Int target)
-		{
-			var gridMap = _mapManager.GetCellMap();
-			//Debug.DrawLine( map.CellToWorld(source) , map.CellToWorld(target), Color.red, 5f);
-			var losCells = GridUtils.GetLineOfSight(source, target);
-			var visibleLos= new List<Vector3Int>();
-			foreach (var losCell in losCells)
-			{
-				if (gridMap[losCell.x, losCell.y].cellType == CellTypes.Wall)
-				{
-					break;
-				}
-				Debug.Log("Adding cell to los: " + losCell);
-				visibleLos.Add(losCell);
-			}
-			return visibleLos;
-		}
 
+		public void Attack(Vector3Int target, AttackData data)
+		{
+			Debug.Log("Attack method not implemented yet");
+		}
 	}
 }

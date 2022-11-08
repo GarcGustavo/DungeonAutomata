@@ -1,25 +1,31 @@
 using System.Collections;
 using DungeonAutomata._Project.Scripts._Interfaces;
+using DungeonAutomata._Project.Scripts.Data;
+using UnityEngine;
 using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
 
 namespace DungeonAutomata._Project.Scripts.CommandSystem.Commands
 {
 	public class AttackCommand : ICommand
 	{
-		private readonly CombatUnit _combatUnit;
+		private readonly ICombatUnit _combatUnit;
+		private readonly Vector3Int _target;
+		private readonly AttackData _data;
 
-		public AttackCommand(CombatUnit combat_unit)
+		public AttackCommand(ICombatUnit combatUnit, Vector3Int target, AttackData data)
 		{
-			_combatUnit = combat_unit;
+			_combatUnit = combatUnit;
+			_target = target;
+			_data = data;
 		}
 
 		public IEnumerator Execute()
 		{
 			//possibly replace with generic logic and simply pass character/attack data into each concrete command
-			_combatUnit.ExecuteAttack();
-			yield return GetWaitForSeconds(duration);
+			_combatUnit.Attack(_target, _data);
+			yield return null;
 		}
 
-		public float duration { get; set; }
+		public float Duration { get; set; }
 	}
 }

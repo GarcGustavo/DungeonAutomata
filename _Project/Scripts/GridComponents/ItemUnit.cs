@@ -6,29 +6,32 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 {
 	public class ItemUnit : MonoBehaviour, IUnit, IItem
 	{
-		[SerializeField] private ItemData _itemData;
+		private ItemData _itemData;
+		private SpriteRenderer _spriteRenderer;
 		public Vector3Int CurrentTile { get; set; }
 		public ItemType ItemType { get; set; }
 		public Sprite Icon { get; set; }
 		public string UnitName { get; set; }
 		public string Description { get; set; }
+		
 
 		private void Awake()
 		{
-			var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-			spriteRenderer.sprite = _itemData.sprite;
-			Icon = _itemData.sprite;
-			UnitName = _itemData.itemName;
-			Description = _itemData.description;
-			ItemType = _itemData.itemType;
+			_spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+			//Icon = _itemData.sprite;
+			//UnitName = _itemData.itemName;
+			//Description = _itemData.description;
+			//ItemType = _itemData.itemType;
 			
 		}
 
 		public void InitializeItem(ItemData itemData)
 		{
 			Icon = itemData.sprite;
+			_spriteRenderer.sprite = itemData.sprite;
 			UnitName = itemData.itemName;
 			Description = itemData.description;
+			ItemType = itemData.itemType;
 		}
 		
 		public void Use(Vector3Int target)

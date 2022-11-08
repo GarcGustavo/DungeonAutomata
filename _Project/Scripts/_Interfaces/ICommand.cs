@@ -6,7 +6,7 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 {
 	public interface ICommand
 	{
-		float duration { get; set; }
+		float Duration { get; set; }
 		IEnumerator Execute();
 	}
 }

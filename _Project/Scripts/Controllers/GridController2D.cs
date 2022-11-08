@@ -22,6 +22,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		//Using feedbacks from MoreMountains for movement effects
 		[SerializeField] private MMFeedbacks feedbacks;
+		private GameManager _gameManager;
 		private EventManager _eventManager;
 		private MapManager _mapManager;
 
@@ -39,6 +40,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		private void Awake()
 		{
+			_gameManager = GameManager.Instance;
 			_eventManager = EventManager.Instance;
 			_mapManager = MapManager.Instance;
 			CanMove = true;
@@ -65,38 +67,30 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			{
 				cellMap = _mapManager.GetCellMap();
 				var previousTile = cellMap[_currentPosition.x, _currentPosition.y];
-				var tile = cellMap[pos.x, pos.y];
-				if (!CheckTile(tile)) 
+				var cell = cellMap[pos.x, pos.y];
+				if (!CheckTile(cell)) 
 					return;
-				StartCoroutine(GridUtils.MoveToPosition(transform, pos, moveCD));
-				tile.isEmpty = false;
-				tile.Occupant = _unit;
-				previousTile.isEmpty = true;
+				cell.isWalkable = false;
+				cell.Occupant = _unit;
+				previousTile.isWalkable = true;
 				previousTile.Occupant = null;
 				_currentPosition = pos;
 				_unit.CurrentTile = _currentPosition;
-				
-				if (_unit.GetType() == typeof(PlayerUnit))
-				{
-					//Debug.Log("Move player to tile: " + pos);
-					_eventManager.InvokePlayerMove(pos);
-					_eventManager.InvokePlayerAction();
-					//_eventManager.InvokePlayerTurnEnd();
-					//feedbacks.PlayFeedbacks();
-				}
+				StartCoroutine(MoveToPosition(transform, pos, moveCD));
 			}
 		}
 
 		private bool CheckTile(CellData tile)
 		{
 			//TODO: optimize and organize
-			if (!tile.isEmpty)
+			if (tile.Occupant != null)
 			{
 				//Enemy collision logic
-				if (_unit.GetType() == typeof(EnemyUnit) && tile.Occupant != null)
+				if (_unit.GetType() == typeof(EnemyUnit) )
 				{
 					//Rework later into command pattern and AoE SO's
-					if (tile.Occupant.GetType() == typeof(PlayerUnit))
+					if (tile.Occupant.GetType() == typeof(PlayerUnit)
+					    || tile.Occupant.GetType() == typeof(EnemyUnit))
 					{
 						var positions = new List<Vector3Int>();
 						positions.Add(tile.Occupant.CurrentTile);
@@ -109,16 +103,18 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 						return false;
 					}
 				}
+				
 				//Player collision logic
-				if (_unit.GetType() == typeof(PlayerUnit) && tile.Occupant != null)
+				if (_unit.GetType() == typeof(PlayerUnit))
 				{
+					Debug.Log("Picking up item: " + tile.gridPosition);
 					if (tile.Occupant.GetType() == typeof(ItemUnit))
 					{
 						_eventManager.InvokePickup(tile.Occupant as IItem);
 						//Hide sprite
 						tile.Occupant.Die();
 						tile.Occupant = null;
-						tile.isEmpty = true;
+						tile.isWalkable = true;
 						return true;
 					}
 					//Rework later into command pattern and AoE SO's
@@ -132,14 +128,13 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 							tile.gridPosition, 
 							moveCD));
 						_eventManager.InvokeAttack(_unit, positions);
-						_eventManager.InvokePlayerAction();
 						//Replace with actual feedbacks/animations later);
 						return false;
 					}
 				}
 			}
 
-			if (tile.isEmpty && tile.Occupant == null)
+			if (tile.isWalkable && tile.Occupant == null)
 			{
 				return true;
 			}
@@ -220,7 +215,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
                 var neighbors = GridUtils.GetAdjacentCells(current, cellMap);
                 foreach (var neighbor in neighbors)
                 {
-                    if (neighbor.isEmpty && !processed_cells.Contains(neighbor.gridPosition))
+                    if (neighbor.isWalkable && !processed_cells.Contains(neighbor.gridPosition))
                     {
                         var tentative_g = g_score + GetCellDistance(current, neighbor.gridPosition);
                         var neighbor_g = GetCellDistance(neighbor.gridPosition, position);

@@ -14,10 +14,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 {
 	public class TileMapGenerator : MonoBehaviour
 	{
-		/// <summary>
-		///     Cellular automata generation
-		/// </summary>
-		
 		//TODO: Minimize serialized fields
 		[SerializeField] private Tilemap targetMap;
 		[SerializeField] private Tilemap highlightTilemap;
@@ -31,18 +27,11 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 
 		[SerializeField] private CellData wallCell;
 		[SerializeField] private CellData groundCell;
-		[SerializeField] private CellData playerSpawnCell;
-		[SerializeField] private CellData spawnCell;
-		[SerializeField] private CellData exitCell;
-		[SerializeField] private CellData itemCell;
-		[SerializeField] private CellData keyCell;
+		[SerializeField] private CellData waterCell;
 		private Vector3Int _playerSpawnPosition;
 		private List<Vector3Int> _enemySpawnPositions;
 		private List<Vector3Int> _itemSpawnPositions;
 		
-		[SerializeField] private  int spawnRadius = 4;
-		[SerializeField] private  int enemyAmount = 10;
-		[SerializeField] private  int itemAmount = 10;
 		[SerializeField] private int roomAmount = 10;
 
 		//Cellular automata maps
@@ -63,11 +52,23 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			RandomFillMap();
 			SmoothMap(smoothingIterations);
 			//Modify to avoid backtracking by adding cyclic paths
-			GenerateRooms(roomAmount);
 			ProcessMap();
-			//CreateMapBorders();
-			//SetSpawns();
+			GenerateRooms(roomAmount);
+			var foundRooms = FindRooms();
+			var currentRoom = _rooms[0];
+			//foreach (var room in _rooms)
+			foreach (var room in _rooms)
+			{
+				if(currentRoom != room)
+					ConnectRooms(currentRoom, room);
+				currentRoom = room;
+			}
 			DrawTilemap(_map);
+		}
+
+		private void CreateLake(List<Vector3Int> region)
+		{
+			region.ForEach(pos => _map[pos.x, pos.y] = Instantiate(waterCell));
 		}
 
 		[Button]
@@ -80,28 +81,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			highlightTilemap.ClearAllTiles();
 			highlightTilemap.CompressBounds();
 			highlightTilemap.RefreshAllTiles();
-		}
-
-		//For debugging purposes
-		[Button]
-		private void DrawDijsktraMap()
-		{
-			var dijkstraMap = GridUtils.GetDijkstraMap(Vector3Int.zero, _map);
-			for (int i = 0; i < dijkstraMap.GetLength(0); i++)
-			{
-				for (int j = 0; j < dijkstraMap.GetLength(1); j++)
-				{
-					if (_map[i, j] != null)
-					{
-						var cell = _map[i, j];
-						if (dijkstraMap[i,j] == -1)
-							targetMap.SetColor(cell.gridPosition, Color.white);
-						else
-							targetMap.SetColor(cell.gridPosition, 
-								Color.Lerp(Color.blue, Color.red, 35f/dijkstraMap[i, j]));
-					}
-				}
-			}
 		}
 		
 		//Getters to be accessed through manager singleton in order to decouple map generator from other systems
@@ -144,7 +123,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 
 		#region AUTOMATAGEN
 
-		//Cellular Automata ruleset
 		private void RandomFillMap()
 		{
 			var prng = new Random(seed);
@@ -228,7 +206,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		private void PlaceRoom(int[,] room, CellData[,] map)
 		{
 			Random random = new Random(seed);
-			var mapBuffer = map;
 			var roomFits = false;
 			var placementAttempts = 0;
 			var roomWidth = room.GetLength(0);
@@ -241,7 +218,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 					random.Next(roomWidth + 1, map.GetLength(0) - roomWidth - 1),
 					random.Next(roomHeight + 1, map.GetLength(1) - roomHeight - 1));
 
-				var roomCells = GridUtils.GetCellsInShape(roomOrigin, room, mapBuffer);
+				var roomCells = GridUtils.GetCellsInShape(roomOrigin, room, map);
 
 				foreach (var cell in roomCells)
 				{
@@ -259,6 +236,38 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				placementAttempts++;
 				random = new Random(seed + placementAttempts);
 			}
+		}
+
+		private void ConnectRooms(List<Vector3Int> startRoom, List<Vector3Int> endRoom)
+		{
+			var start = GridUtils.GetRandomPosition(startRoom);
+			var end = GridUtils.GetRandomPosition(endRoom);
+			var path = GridUtils.GetLine(start, end);
+			foreach (var cell in path) {
+				_map[cell.x, cell.y] = Instantiate(groundCell);
+				SurroundCell(cell, 1, groundCell);
+			}
+		}
+
+		private List<List<Vector3Int>> FindRooms()
+		{
+			var rooms = new List<List<Vector3Int>> ();
+			int[,] mapFlags = new int[width,height];
+			for (int x = 0; x < width; x ++) {
+				for (int y = 0; y < height; y ++) {
+					if (mapFlags[x,y] == 0 && _map[x,y].cellType == CellTypes.Wall) 
+					{
+						List<Vector3Int> newRegion = GetRegionTiles(x,y);
+						rooms.Add(newRegion);
+
+						foreach (Vector3Int tile in newRegion) 
+						{
+							mapFlags[tile.x, tile.y] = 1;
+						}
+					}
+				}
+			}
+			return rooms;
 		}
 
 		//Binary space partitioning
@@ -340,102 +349,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				_map[cell.x, cell.y] = Instantiate(groundCell);
 			}
 		}
-		
-		private void SetSpawns()
-		{
-			_mapBuffer = _map;
-			_playerSpawnPosition = new Vector3Int(0,0,0);
-			_enemySpawnPositions = new List<Vector3Int>();
-			_itemSpawnPositions = new List<Vector3Int>();
-			var playerSet = false;
-			var exitSet = false;
-			var keySet = false;
-			var exitPos = new Vector3Int(0,0,0);
-			var enemyCount = 0;
-			var itemCount = 0;
-			var prng = new Random(seed);
-			
-			for (var i = 0; i < width; i++)
-			{
-				for (var j = 0; j < height; j++)
-				{
-					if (playerSet)
-					    //&& exitSet 
-					    //&& keySet 
-					    //&& enemyCount >= enemyAmount 
-					    //&& itemCount >= itemAmount)
-					{
-						break;
-					}
-
-					if (_mapBuffer[i, j].cellType != CellTypes.Ground) continue;
-					var pos = new Vector3Int(i, j, 0);
-					//var neighbors = GridUtils.GetCellsInRadius(pos, spawnRadius, _mapBuffer);
-					var neighbors = GridUtils.GetCellsInRadius(pos, spawnRadius, _map);
-					var playerDist = playerSet?GridUtils.GetCellDistance(_playerSpawnPosition, pos):0;
-					var exitDist = exitSet?GridUtils.GetCellDistance(exitPos, pos):0;
-					
-					if (!playerSet)
-					{
-						var newTile = Instantiate(playerSpawnCell);
-						targetMap.SetTile(pos, newTile);
-						_map[i, j] = newTile;
-						//newTile.gridPosition = pos;
-						_playerSpawnPosition = pos;
-						playerSet = true;
-					}
-					/*
-					else if (!exitSet 
-					         && playerDist > width/2 
-					         && playerDist > height/2)
-					{
-						var newTile = Instantiate(exitCell);
-						targetMap.SetTile(pos, newTile);
-						_mapBuffer[i, j] = newTile;
-						//newTile.gridPosition = pos;
-						exitPos = pos;
-						exitSet = true;
-					}
-					else if (enemyCount<enemyAmount
-					         && playerDist > width/3 
-					         && playerDist > height/3
-					         && !neighbors.Find(x => 
-						         x.cellType is CellTypes.EnemySpawn))
-					{
-						var newTile = Instantiate(spawnCell);
-						targetMap.SetTile(pos, newTile);
-						_mapBuffer[i, j] = newTile;
-						//newTile.gridPosition = pos;
-						enemyCount++;
-						_enemySpawnPositions.Add(pos);
-					}
-					else if (itemCount<itemAmount
-					         && !neighbors.Find(x => 
-						         x.cellType is CellTypes.ItemSpawn))
-					{
-						var newTile = Instantiate(itemCell);
-						targetMap.SetTile(pos, newTile);
-						_mapBuffer[i, j] = newTile;
-						//newTile.gridPosition = pos;
-						itemCount++;
-						_itemSpawnPositions.Add(pos);
-					}
-					else if (!keySet
-					         && playerDist > width/2
-					         && exitDist > width/4
-					         && !neighbors.Find(x => 
-						         x.cellType is CellTypes.ItemSpawn))
-					{
-						var newTile = Instantiate(keyCell);
-						targetMap.SetTile(pos, newTile);
-						_mapBuffer[i, j] = newTile;
-						//newTile.gridPosition = pos;
-						keySet = true;
-					}
-					*/
-				}
-			}
-		}
 
 		private void ProcessMap() {
 			List<List<Vector3Int>> wallRegions = GetRegions(CellTypes.Wall);
@@ -462,9 +375,8 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				if (roomRegion.Count < roomThresholdSize) {
 					foreach (Vector3Int tile in roomRegion) {
 						var newTile = Instantiate(wallCell);
-						//targetMap.SetTile(tile, newTile);
 						_map[tile.x, tile.y] = newTile;
-						//newTile.gridPosition = tile;
+						CreateLake(roomRegion);
 					}
 				}
 				else {
@@ -551,7 +463,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		
 		private void CreatePassage(GridRoom roomA, GridRoom roomB, Vector3Int tileA, Vector3Int tileB) {
 			GridRoom.ConnectRooms (roomA, roomB);
-			List<Vector3Int> line = GridUtils.GetLineOfSight(tileA, tileB);
+			List<Vector3Int> line = GridUtils.GetLine(tileA, tileB);
 			foreach (Vector3Int c in line) {
 				SurroundCell(c,circleRadius, groundCell);
 			}
@@ -643,6 +555,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				}
 			}
 
+			/*
 			foreach (var room in _rooms)
 			{
 				foreach (var cell in room)
@@ -650,6 +563,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 					targetMap.SetColor(cell, Color.red);
 				}
 			}
+			*/
 		}
 
 		#endregion

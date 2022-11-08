@@ -3,6 +3,7 @@ using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts.Data;
 using DungeonAutomata._Project.Scripts.GridComponents;
 using DungeonAutomata._Project.Scripts.Utilities;
+using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Random = UnityEngine.Random;
@@ -15,14 +16,16 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public static MapManager Instance { get; private set; }
 		
 		[SerializeField] private Grid grid;
-		[SerializeField] private Tilemap[] roomMaps;
 		[SerializeField] private Tilemap tileMap;
 		[SerializeField] private Tilemap highLightMap;
 		[SerializeField] private CellData highLightTile;
 		[SerializeField] private GameObject playerPrefab;
 		[SerializeField] private GameObject[] enemyPrefabs;
-		[SerializeField] private GameObject[] itemPrefabs;
-		[SerializeField] private ItemData[] itemDataObjects;
+		[SerializeField] private GameObject itemPrefab;
+		//Move this logic to a separate class that handles setting SO data
+		[SerializeField] private ItemData itemData;
+		[SerializeField] private ItemData foodData;
+		[SerializeField] private ItemData healthData;
 	
 		public TileMapGenerator tileMapGenerator;
 		private GameManager _gameManager;
@@ -30,6 +33,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private UIManager _uiManager;
 		private PlayerUnit _player;
 		private Vector3Int _playerSpawnPoint;
+		private List<Vector3Int> _startingRoom;
 		private List<EnemyUnit> _enemies;
 		private List<IUnit> _unitsToMove;
 		private List<ItemUnit> _items;
@@ -40,7 +44,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		//Main reference point to get occupant info from
 		private CellData[,] _gridMap;
 		
-		//Objectives for Dijkstra map algorithms
+		//Dijkstra map objectives 
 		private int[,] _playerMap;
 		private int[,] _enemyMap;
 		private int[,] _itemMap;
@@ -68,18 +72,129 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_enemies = new List<EnemyUnit>();
 			_unitsToMove = new List<IUnit>();
 			_visibleCells = new List<Vector3Int>();
-			_gridMap = new CellData[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
-			_playerMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
-			_enemyMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
-			_itemMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
-			_foodMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
-			_waterMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
-			_preyMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
-			_predatorMap = new int[tileMap.cellBounds.size.x, tileMap.cellBounds.size.y];
+			var cellBounds = tileMap.cellBounds;
+			_gridMap = new CellData[cellBounds.size.x, cellBounds.size.y];
+			_playerMap = new int[cellBounds.size.x, cellBounds.size.y];
+			_enemyMap = new int[cellBounds.size.x, cellBounds.size.y];
+			_itemMap = new int[cellBounds.size.x, cellBounds.size.y];
+			_foodMap = new int[cellBounds.size.x, cellBounds.size.y];
+			_waterMap = new int[cellBounds.size.x, cellBounds.size.y];
+			_preyMap = new int[cellBounds.size.x, cellBounds.size.y];
+			_predatorMap = new int[cellBounds.size.x, cellBounds.size.y];
 			
 			_eventManager.OnUnitAction += CheckUnitsToMove;
 			_eventManager.OnAttack += DamageCells;
 			_eventManager.OnUnitDeath += RemoveUnitToMove;
+			_eventManager.OnPlayerAction += UpdatePlayerMap;
+			//_eventManager.OnTurnEnd += UpdatePlayerMap;
+		}
+
+		#region MAPFUNCTIONS
+
+		public void InitializeMap()
+		{
+			tileMapGenerator.GenerateMap();
+			tileMap = tileMapGenerator.GetTileMap();
+			_gridMap = tileMapGenerator.GetCellMap();
+			highLightMap = tileMapGenerator.GetHighlightMap();
+			highLightMap.ClearAllTiles();
+			highLightMap.RefreshAllTiles();
+			SpawnPlayer();
+			SpawnEnemies();
+			SpawnItems();
+		}
+
+		public void ResetMap()
+		{
+			tileMap.ClearAllTiles();
+			highLightMap.ClearAllTiles();
+			_enemies.Clear();
+			_items.Clear();
+			if (_player) Destroy(_player.gameObject);
+		}
+
+		//For debugging purposes
+		[Button]
+		private void ClearDijkstraMap()
+		{
+			foreach (var cell in _gridMap)
+			{
+				tileMap.SetColor(cell.gridPosition, Color.white);
+			}
+		}
+		[Button]
+		private void VisualizePlayerDijsktraMap()
+		{
+			ClearDijkstraMap();
+			var dijkstraMap = GridUtils.GetDijkstraMap(_player.CurrentTile, _gridMap);
+			for (int i = 0; i < dijkstraMap.GetLength(0); i++)
+			{
+				for (int j = 0; j < dijkstraMap.GetLength(1); j++)
+				{
+					if (_gridMap[i, j] != null)
+					{
+						var cell = _gridMap[i, j];
+						if (dijkstraMap[i,j] == -1)
+							tileMap.SetColor(cell.gridPosition, Color.white);
+						else
+							tileMap.SetColor(cell.gridPosition, 
+								Color.Lerp(Color.blue, Color.red, 25f/dijkstraMap[i, j]));
+					}
+				}
+			}
+		}
+		[Button]
+		private void VisualizeEnemyDijsktraMap()
+		{
+			ClearDijkstraMap();
+			var enemyPositions = new List<Vector3Int>();
+			foreach (var enemy in _enemies)
+			{
+				enemyPositions.Add(enemy.CurrentTile);
+			}
+			var dijkstraMap = GridUtils.GetDijkstraMap(enemyPositions, _gridMap);
+			for (int i = 0; i < dijkstraMap.GetLength(0); i++)
+			{
+				for (int j = 0; j < dijkstraMap.GetLength(1); j++)
+				{
+					if (_gridMap[i, j] != null)
+					{
+						var cell = _gridMap[i, j];
+						
+						if (dijkstraMap[i,j] == -1)
+							tileMap.SetColor(cell.gridPosition, Color.white);
+						else
+							tileMap.SetColor(cell.gridPosition, 
+								Color.Lerp(Color.blue, Color.red, 5f/dijkstraMap[i, j]));
+					}
+				}
+			}
+		}
+
+		public void HighLightCell(Vector3 cell)
+		{
+			if (tileMap.HasTile(grid.WorldToCell(cell)))
+			{
+				var cellData = _gridMap[grid.WorldToCell(cell).x, grid.WorldToCell(cell).y];
+				if (cellData == null) return;
+				highLightMap.ClearAllTiles();
+				highLightMap.SetTile(grid.WorldToCell(cell), highLightTile);
+				_visibleCells = GridUtils.GetLine(_player.CurrentTile, grid.WorldToCell(cell));
+				if (cellData.Occupant != null)
+				{
+					_uiManager.SetUnitInfo(cellData.Occupant);
+					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"] " + cellData.Occupant.UnitName);
+				}
+				else
+				{
+					_uiManager.SetUnitInfo(null);
+					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]");
+				}
+			}
+			//foreach (var visibleCell in _visibleCells)
+			//{
+			//	highLightMap.SetTile(visibleCell, highLightTile);
+			//}
 		}
 
 		//Move to combat manager later
@@ -97,6 +212,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void RemoveUnitToMove(IUnit unit)
 		{
+			_gridMap[unit.CurrentTile.x, unit.CurrentTile.y].Occupant = null;
+			_gridMap[unit.CurrentTile.x, unit.CurrentTile.y].isWalkable = true;
 			_unitsToMove.Remove(unit);
 		}
 
@@ -107,7 +224,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				_unitsToMove.Remove(unit);
 				if (_unitsToMove.Count == 0)
 				{
-					_eventManager.InvokeEnemyTurnEnd();
+					//_eventManager.InvokeEnemyTurnEnd();
+					_eventManager.InvokeTurnEnd();
 					foreach (var enemy in _enemies)
 					{
 						if(enemy.isActiveAndEnabled)
@@ -115,79 +233,59 @@ namespace DungeonAutomata._Project.Scripts._Managers
 					}
 				}
 			}
-		}
-
-		//-------------------------------------------------------------------
-		// Map functions
-		//-------------------------------------------------------------------
-
-		public void InitializeMap()
-		{
-			tileMapGenerator.GenerateMap();
-			tileMap = tileMapGenerator.GetTileMap();
-			_gridMap = tileMapGenerator.GetCellMap();
-			highLightMap = tileMapGenerator.GetHighlightMap();
-			highLightMap.ClearAllTiles();
-			highLightMap.RefreshAllTiles();
-			SpawnPlayer();
-			//SpawnEnemies();
-			//SpawnItems();
-		}
-
-		public void ResetMap()
-		{
-			tileMap.ClearAllTiles();
-			highLightMap.ClearAllTiles();
-			_enemies.Clear();
-			_items.Clear();
-			if (_player) Destroy(_player.gameObject);
-		}
-
-		public void HighLightCell(Vector3 cell)
-		{
-			if (tileMap.HasTile(grid.WorldToCell(cell)))
+			else if (_unitsToMove.Count <= 0)
 			{
-				var cellData = _gridMap[grid.WorldToCell(cell).x, grid.WorldToCell(cell).y];
-				if (cellData == null) return;
-				highLightMap.ClearAllTiles();
-				highLightMap.SetTile(grid.WorldToCell(cell), highLightTile);
-				_visibleCells = GridUtils.GetLineOfSight(_player.CurrentTile, grid.WorldToCell(cell));
-				if (cellData.Occupant != null)
-				{
-					_uiManager.SetUnitInfo(cellData.Occupant);
-					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"] " + cellData.Occupant.UnitName);
-				}
-				else
-				{
-					_uiManager.SetUnitInfo(null);
-					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]");
-				}
-			}
-			foreach (var visibleCell in _visibleCells)
-			{
-				highLightMap.SetTile(visibleCell, highLightTile);
+				_eventManager.InvokeTurnEnd();
+				//_eventManager.InvokeEnemyTurnEnd();
 			}
 		}
+
+		#endregion
 
 		#region SPAWNERS
 		
 		private void SpawnPlayer()
 		{
-			_playerSpawnPoint = tileMapGenerator.GetPlayerSpawnPosition();
-			//Debug.Log("Spawning player at: " + _playerSpawnPoint);
+			var rooms = tileMapGenerator.GetRooms();
+			//_playerSpawnPoint = tileMapGenerator.GetPlayerSpawnPosition();
+			
+			//TODO: Add value map logic to spawn player in the best position
+			foreach (var room in rooms)
+			{
+				if (_playerSpawnPoint == Vector3Int.zero)
+				{
+					_playerSpawnPoint = GridUtils.GetRandomPosition(room);
+					_startingRoom = room;
+				}
+				else
+					break;
+			}
+			
 			var prefab = Instantiate(playerPrefab, _playerSpawnPoint, Quaternion.identity);
 			_player = prefab.GetComponent<PlayerUnit>();
 			_player.InitializeUnit();
 			_player.CurrentTile = _gridMap[_playerSpawnPoint.x, _playerSpawnPoint.y].gridPosition;
 			_gameManager.SetPlayer(_player);
 			_gameManager.ResetCamera(_player.transform);
-			var tile = tileMap.GetTile(_player.CurrentTile) as CellData;
-			tile.Occupant = _player;
+			_gridMap[_playerSpawnPoint.x, _playerSpawnPoint.y].Occupant = _player;
+			_gridMap[_playerSpawnPoint.x, _playerSpawnPoint.y].isWalkable = false;
+			//var tile = tileMap.GetTile(_player.CurrentTile) as CellData;
+			//tile.Occupant = _player;
+			UpdatePlayerMap();
 		}
 
 		private void SpawnEnemies()
 		{
-			_enemySpawnPoints = tileMapGenerator.GetEnemySpawnPositions();
+			_enemySpawnPoints = new List<Vector3Int>();
+			var rooms = tileMapGenerator.GetRooms();
+			foreach (var room in rooms)
+			{
+				if (room != _startingRoom)
+				{
+					_enemySpawnPoints.Add(GridUtils.GetRandomPosition(room));
+					_enemySpawnPoints.Add(GridUtils.GetRandomPosition(room));
+				}
+			}
 			//Spawn enemies at available tiles
 			foreach (var spawnPoint in _enemySpawnPoints)
 			{
@@ -199,25 +297,48 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				enemy.InitializeUnit();
 				_enemies.Add(enemy);
 				_unitsToMove.Add(enemy);
-				var tile = tileMap.GetTile(gridPos) as CellData;
-				tile.Occupant = enemy;
+				_gridMap[gridPos.x, gridPos.y].Occupant = enemy;
+				_gridMap[gridPos.x, gridPos.y].isWalkable = false;
+				//var tile = tileMap.GetTile(gridPos) as CellData;
+				//tile.Occupant = enemy;
 			}
+			UpdateEnemyMap(_enemySpawnPoints);
 		}
 
 		private void SpawnItems()
 		{
 			//Spawn items at available tiles
-			_itemSpawnPoints = tileMapGenerator.GetItemSpawnPositions();
+			_itemSpawnPoints = new List<Vector3Int>();
+			var rooms = tileMapGenerator.GetRooms();
+			foreach (var room in rooms)
+			{
+				if (room != _startingRoom)
+				{
+					for (int i = 0; i < 3; i++)
+					{
+						var spawn = GridUtils.GetRandomPosition(room);
+						if (_gridMap[spawn.x, spawn.y].Occupant == null)
+						{
+							_itemSpawnPoints.Add(spawn);
+						}
+					}
+				}
+			}
 			foreach (var spawnPoint in _itemSpawnPoints)
 			{
 				//Debug.Log("Spawning item at: " + spawnPoint);
 				var gridPos = spawnPoint;
-				var prefab = Instantiate(itemPrefabs[0], gridPos, Quaternion.identity);
+				var prefab = Instantiate(itemPrefab, gridPos, Quaternion.identity);
 				var item = prefab.GetComponent<ItemUnit>();
-				//item.InitializeItem(itemDataObjects[0]);
-				var tile = tileMap.GetTile(gridPos) as CellData;
-				tile.Occupant = item;
+				
+				//Eventually move logic to a level director or something
+				item.InitializeItem(Random.Range(0, 100) < 50 ? foodData : healthData);
+
 				item.CurrentTile = gridPos;
+				_gridMap[gridPos.x, gridPos.y].Occupant = item;
+				_gridMap[gridPos.x, gridPos.y].isWalkable = false;
+				//var tile = tileMap.GetTile(gridPos) as CellData;
+				//tile.Occupant = item;
 				_items.Add(item);
 			}
 		}
@@ -249,39 +370,39 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		#endregion
 
 		#region VALUEMAPS
-		private int[,] UpdatePlayerMap()
+		private void UpdatePlayerMap()
 		{
-			return GridUtils.GetDijkstraMap(_player.CurrentTile, tileMapGenerator.GetCellMap());
+			_playerMap = GridUtils.GetDijkstraMap(_player.CurrentTile, tileMapGenerator.GetCellMap());
 		}
 		
-		private int[,] UpdateEnemyMap()
+		private void UpdateEnemyMap(List<Vector3Int> enemyPositions)
 		{
-			return GridUtils.GetDijkstraMap(_player.CurrentTile, tileMapGenerator.GetCellMap());
+			_enemyMap = GridUtils.GetDijkstraMap(enemyPositions, tileMapGenerator.GetCellMap());
 		}
 		
-		private int[,] UpdateItemMap(List<Vector3Int> itemPositions)
+		private void UpdateItemMap(List<Vector3Int> itemPositions)
 		{
-			return GridUtils.GetDijkstraMap(itemPositions, tileMapGenerator.GetCellMap());
+			_itemMap = GridUtils.GetDijkstraMap(itemPositions, tileMapGenerator.GetCellMap());
 		}
 		
-		private int[,] UpdatePredatorMap(List<Vector3Int> predatorPositions)
+		private void UpdatePredatorMap(List<Vector3Int> predatorPositions)
 		{
-			return GridUtils.GetDijkstraMap(predatorPositions, tileMapGenerator.GetCellMap());
+			_predatorMap = GridUtils.GetDijkstraMap(predatorPositions, tileMapGenerator.GetCellMap());
 		}
 		
-		private int[,] UpdatePreyMap(List<Vector3Int> preyPositions)
+		private void UpdatePreyMap(List<Vector3Int> preyPositions)
 		{
-			return GridUtils.GetDijkstraMap(preyPositions, tileMapGenerator.GetCellMap());
+			_preyMap = GridUtils.GetDijkstraMap(preyPositions, tileMapGenerator.GetCellMap());
 		}
 		
-		private int[,] UpdateFoodMap(List<Vector3Int> foodPositions)
+		private void UpdateFoodMap(List<Vector3Int> foodPositions)
 		{
-			return GridUtils.GetDijkstraMap(foodPositions, tileMapGenerator.GetCellMap());
+			_foodMap = GridUtils.GetDijkstraMap(foodPositions, tileMapGenerator.GetCellMap());
 		}
 		
-		private int[,] UpdateWaterMap(List<Vector3Int> waterPositions)
+		private void UpdateWaterMap(List<Vector3Int> waterPositions)
 		{
-			return GridUtils.GetDijkstraMap(waterPositions, tileMapGenerator.GetCellMap());
+			_waterMap = GridUtils.GetDijkstraMap(waterPositions, tileMapGenerator.GetCellMap());
 		}
 
 		public int[,] GetPlayerMap()

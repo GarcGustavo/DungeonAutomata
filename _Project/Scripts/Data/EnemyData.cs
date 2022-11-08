@@ -12,6 +12,7 @@ namespace DungeonAutomata._Project.Scripts.Data
 		public Sprite sprite;
 		public string enemyName;
 		public EnemyType type;
+		public string description;
 
 		public int Level;
 		public int Exp;

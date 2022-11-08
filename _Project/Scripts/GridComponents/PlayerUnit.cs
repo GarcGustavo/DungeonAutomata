@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
+using DungeonAutomata._Project.Scripts.CommandSystem;
+using DungeonAutomata._Project.Scripts.CommandSystem.Commands;
 using DungeonAutomata._Project.Scripts.Controllers;
 using DungeonAutomata._Project.Scripts.Data;
 using DungeonAutomata._Project.Scripts.Utilities;
@@ -18,6 +20,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private EventManager _eventManager;
 		private MapManager _mapManager;
 
+		public string Description { get; set; }
 		public Vector3Int CurrentTile { get; set; }
 		private GridController2D _controller;
 		public string UnitName { get; set; }
@@ -36,6 +39,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private int _intelligence;
 		private int _luck;
 
+		private bool _inputEnabled = true;
 		[SerializeField] private bool zAxisUp;
 
 		private void Awake()
@@ -48,7 +52,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			_inventory = InventoryManager.Instance;
 			_mapManager = MapManager.Instance;
 			_eventManager.OnPlayerDamaged += Damage;
-			_eventManager.OnPlayerAction += UseEnergy;
+			//_eventManager.OnPlayerAction += UseEnergy;
 			_eventManager.OnPlayerTurnStart += RefillEnergy;
 			CurrentTile = new Vector3Int();
 			UnitName = playerData.name;
@@ -70,7 +74,28 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			_level = playerData.Level;
 			_exp = playerData.Exp;
 			
+			Hunger = 0;
+			Thirst = 0;
+			
 			_controller.InitializeGrid();
+			SetDescription();
+			SetMoveState(true);
+		}
+		
+		private void SetDescription()
+		{
+			Description += $"Name: {playerData.name}\n" +
+			              $"Level: {_level}\n" +
+			              $"Exp: {_exp}\n" +
+			              $"Health: {CurrentHP}/" + $"{MaxHP}\n" +
+			              $"Mp: {playerData.Mp}\n" +
+			              $"Energy: {CurrentEnergy}/" + $"{MaxEnergy}\n" +
+			              $"Strength: {_strength}\n" +
+			              $"Dexterity: {_dexterity}\n" +
+			              $"Intelligence: {_intelligence}\n" +
+			              $"Luck: {_luck}\n" +
+			              $"Hunger: {Hunger}\n" +
+			              $"Thirst: {Thirst}\n";
 		}
 
 		public void RefillEnergy()
@@ -81,10 +106,16 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void UseEnergy()
 		{
-			CurrentEnergy--;
+			SetMoveState(false);
 			if (CurrentEnergy <= 0)
 			{
-				_eventManager.InvokePlayerTurnEnd();
+				_eventManager.InvokeTurnEnd();
+			}
+			else
+			{
+				CurrentEnergy--;
+				_eventManager.InvokePlayerAction();
+				SetMoveState(true);
 			}
 		}
 
@@ -99,13 +130,15 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			}
 		}
 
-		public void SetMoveState(bool is_moving)
+		public void SetMoveState(bool isMoving)
 		{
-			_controller.CanMove = is_moving;
+			_inputEnabled = isMoving;
+			//_controller.CanMove = isMoving;
 		}
 
 		public void Move(Vector3Int position)
 		{
+			Debug.Log("Player moving to: " + position + " from: " + CurrentTile);
 			_controller.MoveUnit(position);
 		}
 
@@ -116,6 +149,11 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			{
 				target.Damage(1);
 			}
+		}
+
+		public void Attack(Vector3Int target, AttackData data)
+		{
+			throw new System.NotImplementedException();
 		}
 
 		public void Die()
@@ -136,32 +174,44 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void GetPlayerInput()
 		{
-			if (Input.GetKey(KeyCode.W) && !Input.GetKeyUp(KeyCode.W))
+			if (_inputEnabled)
 			{
-				var direction = zAxisUp ? Vector3Int.forward : Vector3Int.up;
-				Move(CurrentTile + direction);
-			}
-			else if (Input.GetKey(KeyCode.S) && !Input.GetKeyUp(KeyCode.S))
-			{
-				var direction = zAxisUp ? Vector3Int.back : Vector3Int.down;
-				Move(CurrentTile + direction);
-			}
-			else if (Input.GetKey(KeyCode.A) && !Input.GetKeyUp(KeyCode.A))
-			{
-				Move(CurrentTile + Vector3Int.left);
-			}
-			else if (Input.GetKey(KeyCode.D) && !Input.GetKeyUp(KeyCode.D))
-			{
-				Move(CurrentTile + Vector3Int.right);
-			}
-			else if (Input.GetKeyDown(KeyCode.Tab))
-			{
-				_eventManager.InvokeMenu();
-			}
-			else if (Input.GetKey(KeyCode.Space) && !Input.GetKeyUp(KeyCode.Space))
-			{
-				//Essentially a fast forward button
-				_eventManager.InvokePlayerAction();
+				if (Input.GetKey(KeyCode.W) && !Input.GetKeyUp(KeyCode.W))
+				{
+					var direction = zAxisUp ? Vector3Int.forward : Vector3Int.up;
+					_manager.RegisterCommand(new MoveCommand(this, CurrentTile + direction));
+					UseEnergy();
+					//Move(CurrentTile + direction);
+				}
+				else if (Input.GetKey(KeyCode.S) && !Input.GetKeyUp(KeyCode.S))
+				{
+					var direction = zAxisUp ? Vector3Int.back : Vector3Int.down;
+					_manager.RegisterCommand(new MoveCommand(this, CurrentTile + direction));
+					UseEnergy();
+					//Move(CurrentTile + direction);
+				}
+				else if (Input.GetKey(KeyCode.A) && !Input.GetKeyUp(KeyCode.A))
+				{
+					_manager.RegisterCommand(new MoveCommand(this, CurrentTile + Vector3Int.left));
+					UseEnergy();
+					//Move(CurrentTile + Vector3Int.left);
+				}
+				else if (Input.GetKey(KeyCode.D) && !Input.GetKeyUp(KeyCode.D))
+				{
+					_manager.RegisterCommand(new MoveCommand(this, CurrentTile + Vector3Int.right));
+					UseEnergy();
+					//Move(CurrentTile + Vector3Int.right);
+				}
+				else if (Input.GetKeyDown(KeyCode.Tab))
+				{
+					_eventManager.InvokeMenu();
+				}
+				else if (Input.GetKey(KeyCode.Space) && !Input.GetKeyUp(KeyCode.Space))
+				{
+					//Essentially a fast forward button
+					_eventManager.InvokePlayerAction();
+					UseEnergy();
+				}
 			}
 		}
 		

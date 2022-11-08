@@ -72,28 +72,10 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		public void SetUnitInfo(IUnit target)
 		{
-			if(target != null)
+			if (target != null && target.GetType() != typeof(PlayerUnit))
 			{
 				_infoPanel.SetActive(true);
-				if (target.GetType() == typeof(EnemyUnit)
-				    || target.GetType() == typeof(PlayerUnit))
-				{
-					var combatUnit = (ICombatUnit)target;
-					_unitInfoText.text = target.UnitName + "\n"
-					                                     + "Health: "
-					                                     + combatUnit.CurrentHP + "/"
-					                                     + combatUnit.MaxHP + "\n";
-					//Only for debugging purposes, remove later
-					if (target.GetType() == typeof(EnemyUnit))
-					{
-						var enemyUnit = (EnemyUnit) target;
-						_unitInfoText.text += "Target: " + enemyUnit.CurrentTarget + "\n";
-					}
-				}
-				else
-				{
-					_unitInfoText.text = target.UnitName + "\n";
-				}
+				_unitInfoText.text = target.Description + "\n";
 			}
 			else
 			{

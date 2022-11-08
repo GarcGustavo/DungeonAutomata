@@ -23,11 +23,11 @@ MonoBehaviour:
     SerializationNodes:
     - Name: StatModifiers
       Entry: 7
-      Data: 0|System.Collections.Generic.Dictionary`2[[_Project.Scripts.Data.StatModifier,
+      Data: 0|System.Collections.Generic.Dictionary`2[[DungeonAutomata._Project.Scripts.Data.StatModifier,
         LatteAssembly],[System.Single, mscorlib]], mscorlib
     - Name: comparer
       Entry: 7
-      Data: 1|System.Collections.Generic.EnumEqualityComparer`1[[_Project.Scripts.Data.StatModifier,
+      Data: 1|System.Collections.Generic.EnumEqualityComparer`1[[DungeonAutomata._Project.Scripts.Data.StatModifier,
         LatteAssembly]], mscorlib
     - Name: 
       Entry: 12
@@ -49,7 +49,7 @@ MonoBehaviour:
       Data: 0
     - Name: $v
       Entry: 4
-      Data: 1
+      Data: 10
     - Name: 
       Entry: 8
       Data: 

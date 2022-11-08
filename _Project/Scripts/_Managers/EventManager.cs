@@ -26,6 +26,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public event Action OnEnemyTurnStart;
 		public event Action OnPlayerTurnEnd;
 		public event Action OnEnemyTurnEnd;
+		public event Action OnTurnEnd;
 		
 		// Player Events
 		public event Action<int> OnPlayerDamaged;
@@ -34,7 +35,6 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public event Action OnPlayerGoalReached;
 		public event Action OnPlayerAction;
 		public event Action<IItem> OnItemSelect; 
-
 		public event Action<Vector3Int> OnPlayerMove;
 
 		// General Unit Events, possibly need to add unique id to each unit
@@ -81,6 +81,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public void InvokeEnemyTurnEnd()
 		{
 			OnEnemyTurnEnd?.Invoke();
+		}
+
+		public void InvokeTurnEnd()
+		{
+			OnTurnEnd?.Invoke();
 		}
 
 		// Unit Events
