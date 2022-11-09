@@ -20,7 +20,6 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 	public class EnemyUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
 		[SerializeField] private EnemyData _enemyData;
-		[SerializeField] private int _viewDistance = 5;
 		
 		private GameManager _gameManager;
 		private MapManager _mapManager;
@@ -42,6 +41,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private CellData[,] _cellMap;
 		public bool CanMove { get; set; }
 		private GridController2D _controller;
+		private SpriteRenderer _spriteRenderer;
 
 		private void Awake()
 		{
@@ -50,15 +50,30 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			_eventManager = EventManager.Instance;
 			_controller = GetComponent<GridController2D>();
 			_eventManager.OnEnemyTurnStart += UpdateState;
-			var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-			spriteRenderer.sprite = _enemyData.sprite;
-			UnitName = _enemyData.enemyName;
-			AggroDistance = _enemyData.aggroDistance;
+			_spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 		}
 
+		//TODO: remove redundant overload from interface
 		public void InitializeUnit()
 		{
 			_tilemap = _mapManager.GetTileMap();
+			_spriteRenderer.sprite = _enemyData.sprite;
+			AggroDistance = _enemyData.aggroDistance;
+			UnitName = _enemyData.enemyName;
+			MaxHP = _enemyData.Health;
+			CurrentHP = MaxHP;
+			CanMove = true;
+			SetDescription();
+			//_controller.InitializeGrid();
+		}
+
+		public void InitializeUnit(EnemyData unitData)
+		{
+			_enemyData = unitData;
+			_tilemap = _mapManager.GetTileMap();
+			_spriteRenderer.sprite = _enemyData.sprite;
+			AggroDistance = _enemyData.aggroDistance;
+			UnitName = _enemyData.enemyName;
 			MaxHP = _enemyData.Health;
 			CurrentHP = MaxHP;
 			CanMove = true;

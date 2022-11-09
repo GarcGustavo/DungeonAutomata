@@ -4,6 +4,7 @@ using DungeonAutomata._Project.Scripts.Utilities;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
 
 namespace DungeonAutomata._Project.Scripts._Managers
 {
@@ -17,7 +18,9 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		[SerializeField] private TMP_Text _energyText;
 		[SerializeField] private TMP_Text _inspectText;
 		[SerializeField] private TMP_Text _unitInfoText;
+		[SerializeField] private TMP_Text _playerInfo;
 		[SerializeField] private GameObject _infoPanel;
+		[SerializeField] private GameObject _playerPanel;
 		[SerializeField] private RectTransform inventoryPanel;
 		[SerializeField] private ItemContainerUI inventoryItem;
 		private EventManager _eventManager;
@@ -25,6 +28,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private InventoryManager _inventoryManager;
 		private PlayerUnit _player;
 		private int _turnCount;
+		private RectTransform _uiPanel;
 		public static UIManager Instance { get; private set; }
 
 		private void Awake()
@@ -43,7 +47,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_gameManager = GameManager.Instance;
 			_inventoryManager = InventoryManager.Instance;
 			_eventManager.OnUpdateInventory += UpdateInventory;
-			//_player = _gameManager.GetPlayer();
+			_eventManager.OnUpdateHUD += UpdatePlayerInfo;
+			_uiPanel = _infoPanel.GetComponent<RectTransform>();
 		}
 
 		// Update is called once per frame
@@ -74,6 +79,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			if (target != null && target.GetType() != typeof(PlayerUnit))
 			{
+				var rect = _uiPanel.rect;
+				_infoPanel.transform.position = GetMousePopupPosition(rect.height, rect.width);
 				_infoPanel.SetActive(true);
 				_unitInfoText.text = target.Description + "\n";
 			}
@@ -87,6 +94,16 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public void SetHoverText(string text)
 		{
 			_inspectText.text = text;
+		}
+
+		private void UpdatePlayerInfo()
+		{
+			_player = _gameManager.GetPlayer();
+			if (_player != null)
+			{
+				_player.UpdateDescription();
+				_playerInfo.text = _player.Description;
+			}
 		}
 
 		private void UpdateInventory()

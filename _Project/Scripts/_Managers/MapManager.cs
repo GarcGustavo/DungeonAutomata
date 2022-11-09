@@ -20,9 +20,10 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		[SerializeField] private Tilemap highLightMap;
 		[SerializeField] private CellData highLightTile;
 		[SerializeField] private GameObject playerPrefab;
-		[SerializeField] private GameObject[] enemyPrefabs;
+		[SerializeField] private GameObject enemyPrefab;
 		[SerializeField] private GameObject itemPrefab;
 		//Move this logic to a separate class that handles setting SO data
+		[SerializeField] private EnemyData[] enemyData;
 		[SerializeField] private ItemData itemData;
 		[SerializeField] private ItemData foodData;
 		[SerializeField] private ItemData healthData;
@@ -284,23 +285,25 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				{
 					_enemySpawnPoints.Add(GridUtils.GetRandomPosition(room));
 					_enemySpawnPoints.Add(GridUtils.GetRandomPosition(room));
+					_enemySpawnPoints.Add(GridUtils.GetRandomPosition(room));
 				}
 			}
 			//Spawn enemies at available tiles
 			foreach (var spawnPoint in _enemySpawnPoints)
 			{
-				//Debug.Log("Spawning enemy at: " + spawnPoint);
+				var data = enemyData[Random.Range(0, enemyData.Length)];
 				var gridPos = spawnPoint;
-				var prefab = Instantiate(enemyPrefabs[0], gridPos, Quaternion.identity);
-				var enemy = prefab.GetComponent<EnemyUnit>();
-				enemy.CurrentTile = gridPos;
-				enemy.InitializeUnit();
-				_enemies.Add(enemy);
-				_unitsToMove.Add(enemy);
-				_gridMap[gridPos.x, gridPos.y].Occupant = enemy;
-				_gridMap[gridPos.x, gridPos.y].isWalkable = false;
-				//var tile = tileMap.GetTile(gridPos) as CellData;
-				//tile.Occupant = enemy;
+				if (_gridMap[gridPos.x, gridPos.y].Occupant == null)
+				{
+					var prefab = Instantiate(enemyPrefab, gridPos, Quaternion.identity);
+					var enemy = prefab.GetComponent<EnemyUnit>();
+					enemy.InitializeUnit(data);
+					enemy.CurrentTile = gridPos;
+					_enemies.Add(enemy);
+					_unitsToMove.Add(enemy);
+					_gridMap[gridPos.x, gridPos.y].Occupant = enemy;
+					_gridMap[gridPos.x, gridPos.y].isWalkable = false;
+				}
 			}
 			UpdateEnemyMap(_enemySpawnPoints);
 		}
@@ -314,13 +317,14 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			{
 				if (room != _startingRoom)
 				{
-					for (int i = 0; i < 3; i++)
+					//TODO: Add value map logic to spawn items in the best position
+				}
+				for (int i = 0; i < 3; i++)
+				{
+					var spawn = GridUtils.GetRandomPosition(room);
+					if (_gridMap[spawn.x, spawn.y].Occupant == null)
 					{
-						var spawn = GridUtils.GetRandomPosition(room);
-						if (_gridMap[spawn.x, spawn.y].Occupant == null)
-						{
-							_itemSpawnPoints.Add(spawn);
-						}
+						_itemSpawnPoints.Add(spawn);
 					}
 				}
 			}

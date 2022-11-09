@@ -89,6 +89,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_eventManager.InvokeStartGame();
 			_mapManager.InitializeMap();
 			_player = GetPlayer();
+			_eventManager.InvokeUpdateHUD();
 			//UpdateGameState(_state);
 		}
 		private void Update()
@@ -140,20 +141,21 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			_previousState = _state;
 			_state = newState;
-			Debug.Log("Prev State: " + _previousState);
-			Debug.Log("Next State: " + _state);
+			Debug.Log("State: " + _state);
 			switch (_state)
 			{
 				case GameState.PlayerTurn:
 					//Execute commands registered by enemies in last turn
 					//ExecuteCommands();
-					yield return GetWaitForSeconds(.1f);
+					_eventManager.InvokeUpdateHUD();
+					yield return GetWaitForSeconds(.05f);
 					_eventManager.InvokePlayerTurnStart();
 					break;
 				case GameState.EnemyTurn:
 					//Execute commands registered by player in last turn
 					//ExecuteCommands();
-					yield return GetWaitForSeconds(.1f);
+					_eventManager.InvokeUpdateHUD();
+					yield return GetWaitForSeconds(.05f);
 					_eventManager.InvokeEnemyTurnStart();
 					break;
 				case GameState.Lose:
@@ -200,6 +202,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		public void ExecuteCommands()
 		{
+			//TODO: Add initiative system and lock registration of commands after turn end
 			Debug.Log("Executing " + _actionList.Count + " commands");
 			foreach (var command in _actionList)
 			{

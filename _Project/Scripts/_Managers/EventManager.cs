@@ -41,6 +41,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public event Action<IUnit, List<Vector3Int>> OnAttack;
 		public event Action<IItem> OnPickup;
 		public event Action OnUpdateInventory;
+		public event Action OnUpdateHUD;
 		public event Action<Vector3Int> OnUnitMove;
 		public event Action<IUnit> OnUnitAction;
 		public event Action<IUnit> OnUnitDeath;
@@ -61,6 +62,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public void InvokeMenu()
 		{
 			OnMenu?.Invoke();
+		}
+
+		public void InvokeUpdateHUD()
+		{
+			OnUpdateHUD?.Invoke();
 		}
 
 		public void InvokePlayerTurnStart()

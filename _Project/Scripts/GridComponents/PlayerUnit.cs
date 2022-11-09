@@ -78,17 +78,17 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			Thirst = 0;
 			
 			_controller.InitializeGrid();
-			SetDescription();
+			UpdateDescription();
 			SetMoveState(true);
 		}
 		
-		private void SetDescription()
+		public void UpdateDescription()
 		{
-			Description += $"Name: {playerData.name}\n" +
+			Description = $"Name: {playerData.name}\n" +
 			              $"Level: {_level}\n" +
 			              $"Exp: {_exp}\n" +
 			              $"Health: {CurrentHP}/" + $"{MaxHP}\n" +
-			              $"Mp: {playerData.Mp}\n" +
+			              $"Mp: {CurrentMP}/" + $"{MaxMP}\n" +
 			              $"Energy: {CurrentEnergy}/" + $"{MaxEnergy}\n" +
 			              $"Strength: {_strength}\n" +
 			              $"Dexterity: {_dexterity}\n" +
@@ -154,6 +154,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public void Attack(Vector3Int target, AttackData data)
 		{
 			throw new System.NotImplementedException();
+			UpdateDescription();
 		}
 
 		public void Die()

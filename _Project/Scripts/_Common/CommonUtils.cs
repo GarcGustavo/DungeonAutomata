@@ -63,5 +63,20 @@ namespace DungeonAutomata._Project.Scripts._Common
 
 			foreach (Transform child in obj.transform) SetLayerRecursively(child.gameObject, layer);
 		}
+		
+		//Displays info next to mouse position while keeping it on-screen
+		public static Vector3 GetMousePopupPosition(float height, float width)
+		{
+			var popupPosition = Input.mousePosition;
+			var offset = Vector3.zero;
+			offset.x = width / 2 + 5;
+			offset.y = height / 2 + 5;
+			if (popupPosition.x + width > Screen.width)
+				offset.x = -offset.x;
+			if (popupPosition.y + height > Screen.height)
+				offset.y = -offset.y;
+			popupPosition += offset;
+			return popupPosition;
+		}
 	}
 }
