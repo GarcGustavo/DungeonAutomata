@@ -1,13 +1,17 @@
 using DungeonAutomata._Project.Scripts._Interfaces;
+using DungeonAutomata._Project.Scripts._Managers;
+using DungeonAutomata._Project.Scripts.Controllers;
 using DungeonAutomata._Project.Scripts.Data;
 using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts.GridComponents
 {
+	[RequireComponent(typeof(DraggableController))]
 	public class ItemUnit : MonoBehaviour, IUnit, IItem
 	{
 		private ItemData _itemData;
 		private SpriteRenderer _spriteRenderer;
+		private MapManager _mapManager;
 		public Vector3Int CurrentTile { get; set; }
 		public ItemType ItemType { get; set; }
 		public Sprite Icon { get; set; }
@@ -18,6 +22,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private void Awake()
 		{
 			_spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+			_mapManager = MapManager.Instance;
 			//Icon = _itemData.sprite;
 			//UnitName = _itemData.itemName;
 			//Description = _itemData.description;
@@ -70,6 +75,30 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public void Move(Vector3Int position)
 		{
 			throw new System.NotImplementedException();
+		}
+		
+		public void SetPosition(Vector3Int position)
+		{
+			var cellMap = _mapManager.GetCellMap();
+			cellMap = _mapManager.GetCellMap();
+			if (cellMap != null
+			    && cellMap[position.x, position.y] != null
+			    && cellMap[position.x, position.y].Occupant == null
+			    && cellMap[position.x, position.y].isWalkable)
+			{
+				cellMap[CurrentTile.x, CurrentTile.y].Occupant = null;
+				cellMap[CurrentTile.x, CurrentTile.y].isWalkable = true;
+				cellMap[position.x, position.y].Occupant = this;
+				cellMap[position.x, position.y].isWalkable = false;
+				//need to refactor, used to be isEmpty
+				transform.position = position;
+				CurrentTile = position;
+				_mapManager.UpdateCellMap(cellMap);
+			}
+			else
+			{
+				transform.position = CurrentTile;
+			}
 		}
 
 		public void Consume(ItemUnit itemUnit)

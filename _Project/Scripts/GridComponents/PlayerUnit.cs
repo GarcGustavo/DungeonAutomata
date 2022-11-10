@@ -12,6 +12,7 @@ using UnityEngine;
 namespace DungeonAutomata._Project.Scripts.GridComponents
 {
 	[RequireComponent(typeof(GridController2D))]
+	[RequireComponent(typeof(DraggableController))]
 	public class PlayerUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
 		[SerializeField] private PlayerData playerData;
@@ -19,6 +20,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private GameManager _manager;
 		private EventManager _eventManager;
 		private MapManager _mapManager;
+		private CellData[,] _cellMap;
 
 		public string Description { get; set; }
 		public Vector3Int CurrentTile { get; set; }
@@ -76,6 +78,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			
 			Hunger = 0;
 			Thirst = 0;
+			_cellMap = _mapManager.GetCellMap();
 			
 			_controller.InitializeGrid();
 			UpdateDescription();
@@ -106,16 +109,16 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void UseEnergy()
 		{
-			SetMoveState(false);
 			if (CurrentEnergy <= 0)
 			{
+				SetMoveState(false);
 				_eventManager.InvokeTurnEnd();
 			}
 			else
 			{
 				CurrentEnergy--;
-				_eventManager.InvokePlayerAction();
 				SetMoveState(true);
+				_eventManager.InvokePlayerAction();
 			}
 		}
 
@@ -140,6 +143,23 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			Debug.Log("Player moving to: " + position + " from: " + CurrentTile);
 			_controller.MoveUnit(position);
+		}
+		
+		public void SetPosition(Vector3Int position)
+		{
+			_cellMap = _mapManager.GetCellMap();
+			if (_cellMap != null
+			    && _cellMap[position.x, position.y] != null
+			    && _cellMap[position.x, position.y].Occupant == null
+			    && _cellMap[position.x, position.y].isWalkable)
+			{
+				_controller.SetPosition(position);
+				CurrentTile = position;
+			}
+			else
+			{
+				transform.position = CurrentTile;
+			}
 		}
 
 		//Not efficient, rework later

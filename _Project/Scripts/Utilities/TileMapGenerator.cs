@@ -94,6 +94,11 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			return _map;
 		}
 		
+		public void UpdateCellMap(CellData[,] map)
+		{
+			_map = map;
+		}
+		
 		public Tilemap GetHighlightMap()
 		{
 			return highlightTilemap;

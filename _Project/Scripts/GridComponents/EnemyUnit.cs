@@ -17,6 +17,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 {
 	[RequireComponent(typeof(BoxCollider2D))]
 	[RequireComponent(typeof(GridController2D))]
+	[RequireComponent(typeof(DraggableController))]
 	public class EnemyUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
 		[SerializeField] private EnemyData _enemyData;
@@ -118,6 +119,22 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				{
 					_tilemap.SetColor(cell, color);
 				}
+			}
+		}
+		
+		public void SetPosition(Vector3Int position)
+		{
+			if (_cellMap != null
+			    && _cellMap[position.x, position.y] != null
+			    && _cellMap[position.x, position.y].Occupant == null
+			    && _cellMap[position.x, position.y].isWalkable)
+			{
+				_controller.SetPosition(position);
+				CurrentTile = position;
+			}
+			else
+			{
+				transform.position = CurrentTile;
 			}
 		}
 

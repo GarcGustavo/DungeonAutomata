@@ -19,13 +19,10 @@ namespace DungeonAutomata._Project.Scripts.CommandSystem.Commands
 			_data = data;
 		}
 
-		public IEnumerator Execute()
+		public void Execute()
 		{
 			//possibly replace with generic logic and simply pass character/attack data into each concrete command
 			_combatUnit.Attack(_target, _data);
-			yield return null;
 		}
-
-		public float Duration { get; set; }
 	}
 }

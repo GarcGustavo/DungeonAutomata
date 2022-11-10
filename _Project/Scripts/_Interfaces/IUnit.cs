@@ -11,6 +11,7 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 		public Vector3Int CurrentTile { get; set; }
 		public void InitializeUnit();
 		public void Move(Vector3Int position);
+		public void SetPosition(Vector3Int position);
 		public void Attack(IUnit source, IUnit target);
 		public void Damage(int dmg);
 		public void Die();

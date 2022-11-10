@@ -18,15 +18,11 @@ namespace DungeonAutomata._Project.Scripts.CommandSystem.Commands
 			_target = target;
 		}
 
-		public IEnumerator Execute()
+		public void Execute()
 		{
 			//possibly replace with generic logic and simply pass character/attack data into each concrete command
 			//_combatUnit.ExecuteAttack();
-			Debug.Log("MoveCommand executed");
 			_combatUnit.Move(_target);
-			yield return null;
 		}
-
-		public float Duration { get; set; }
 	}
 }

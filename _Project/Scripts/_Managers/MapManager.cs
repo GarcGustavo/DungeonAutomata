@@ -184,7 +184,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				if (cellData.Occupant != null)
 				{
 					_uiManager.SetUnitInfo(cellData.Occupant);
-					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"] " + cellData.Occupant.UnitName);
+					//Used for debugging
+					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]");
 				}
 				else
 				{
@@ -369,6 +370,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public Vector3Int GetPlayerPosition()
 		{
 			return _player.CurrentTile;
+		}
+		
+		public void UpdateCellMap(CellData[,] map)
+		{
+			_gridMap = map;
+			tileMapGenerator.UpdateCellMap(_gridMap);
 		}
 
 		#endregion

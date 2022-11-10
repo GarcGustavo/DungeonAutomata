@@ -56,8 +56,17 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		public void SetPosition(Vector3Int position)
 		{
+			var previousCell = cellMap[_unit.CurrentTile.x, _unit.CurrentTile.y];
+			previousCell.Occupant = null;
+			previousCell.isWalkable = true;
+			
+			var currentCell = cellMap[position.x, position.y];
+			currentCell.Occupant = _unit;
+			currentCell.isWalkable = false;
+			
 			_currentPosition = position;
 			transform.position = position;
+			_mapManager.UpdateCellMap(cellMap);
 		}
 
 		public void MoveUnit(Vector3Int pos)
@@ -66,38 +75,39 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			if (tilemap.HasTile(pos))
 			{
 				cellMap = _mapManager.GetCellMap();
-				var previousTile = cellMap[_currentPosition.x, _currentPosition.y];
+				var previousCell = cellMap[_currentPosition.x, _currentPosition.y];
 				var cell = cellMap[pos.x, pos.y];
-				if (!CheckTile(cell)) 
+				if (!IsFreeCell(cell)) 
 					return;
 				cell.isWalkable = false;
 				cell.Occupant = _unit;
-				previousTile.isWalkable = true;
-				previousTile.Occupant = null;
+				previousCell.isWalkable = true;
+				previousCell.Occupant = null;
 				_currentPosition = pos;
 				_unit.CurrentTile = _currentPosition;
 				StartCoroutine(MoveToPosition(transform, pos, moveCD));
 			}
 		}
 
-		private bool CheckTile(CellData tile)
+		//TODO: Refactor and move logic out of this method
+		private bool IsFreeCell(CellData cell)
 		{
 			//TODO: optimize and organize
-			if (tile.Occupant != null)
+			if (cell.Occupant != null)
 			{
 				//Enemy collision logic
 				if (_unit.GetType() == typeof(EnemyUnit) )
 				{
 					//Rework later into command pattern and AoE SO's
-					if (tile.Occupant.GetType() == typeof(PlayerUnit)
-					    || tile.Occupant.GetType() == typeof(EnemyUnit))
+					if (cell.Occupant.GetType() == typeof(PlayerUnit)
+					    || cell.Occupant.GetType() == typeof(EnemyUnit))
 					{
 						var positions = new List<Vector3Int>();
-						positions.Add(tile.Occupant.CurrentTile);
-						Debug.Log("Attacking: " + tile.gridPosition);
+						positions.Add(cell.Occupant.CurrentTile);
+						Debug.Log("Attacking: " + cell.gridPosition);
 						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
 							_currentPosition, 
-							tile.gridPosition, 
+							cell.gridPosition, 
 							moveCD));
 						_eventManager.InvokeAttack(_unit, positions);
 						return false;
@@ -107,25 +117,25 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				//Player collision logic
 				if (_unit.GetType() == typeof(PlayerUnit))
 				{
-					Debug.Log("Picking up item: " + tile.gridPosition);
-					if (tile.Occupant.GetType() == typeof(ItemUnit))
+					Debug.Log("Picking up item: " + cell.gridPosition);
+					if (cell.Occupant.GetType() == typeof(ItemUnit))
 					{
-						_eventManager.InvokePickup(tile.Occupant as IItem);
+						_eventManager.InvokePickup(cell.Occupant as IItem);
 						//Hide sprite
-						tile.Occupant.Die();
-						tile.Occupant = null;
-						tile.isWalkable = true;
+						cell.Occupant.Die();
+						cell.Occupant = null;
+						cell.isWalkable = true;
 						return true;
 					}
 					//Rework later into command pattern and AoE SO's
-					if (tile.Occupant.GetType() == typeof(EnemyUnit))
+					if (cell.Occupant.GetType() == typeof(EnemyUnit))
 					{
 						var positions = new List<Vector3Int>();
-						positions.Add(tile.Occupant.CurrentTile);
-						Debug.Log("Attacking: " + tile.gridPosition);
+						positions.Add(cell.Occupant.CurrentTile);
+						Debug.Log("Attacking: " + cell.gridPosition);
 						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
 							_currentPosition, 
-							tile.gridPosition, 
+							cell.gridPosition, 
 							moveCD));
 						_eventManager.InvokeAttack(_unit, positions);
 						//Replace with actual feedbacks/animations later);
@@ -134,7 +144,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				}
 			}
 
-			if (tile.isWalkable && tile.Occupant == null)
+			if (cell.isWalkable && cell.Occupant == null)
 			{
 				return true;
 			}

@@ -63,7 +63,6 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_eventManager.OnPlayerGoalReached += NextStage;
 			_eventManager.OnPlayerDeath += PlayerDeath;
 			_eventManager.OnTurnEnd += TurnEnd;
-			_eventManager.OnTurnEnd += ExecuteCommands;
 			_inventory = new List<ItemUnit>();
 			_actionList = new List<ICommand>();
 			_state = GameState.PlayerTurn;
@@ -112,50 +111,38 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		// State functions
 		//-------------------------------------------------------------------
 
-		private void TurnEnd()
-		{
-			if (_state == GameState.PlayerTurn)
-			{
-				StartCoroutine(UpdateGameState(GameState.EnemyTurn));
-			}
-			else if (_state == GameState.EnemyTurn)
-			{
-				StartCoroutine(UpdateGameState(GameState.PlayerTurn));
-			}
-		}
-
 		private void ToggleMenu()
 		{
 			if (_state == GameState.Menu)
 			{
-				StartCoroutine(UpdateGameState(_previousState));
+				UpdateGameState(_previousState);
+				//StartCoroutine(UpdateGameState(_previousState));
 			}
 			else
 			{
 				_player.SetMoveState(false);
-				StartCoroutine(UpdateGameState(GameState.Menu));
+				UpdateGameState(GameState.Menu);
+				//StartCoroutine(UpdateGameState(GameState.Menu));
 			}
 		}
 
-		private IEnumerator UpdateGameState(GameState newState)
+		private void UpdateGameState(GameState newState)
 		{
 			_previousState = _state;
-			_state = newState;
 			Debug.Log("State: " + _state);
-			switch (_state)
+			switch (newState)
 			{
 				case GameState.PlayerTurn:
 					//Execute commands registered by enemies in last turn
 					//ExecuteCommands();
 					_eventManager.InvokeUpdateHUD();
-					yield return GetWaitForSeconds(.05f);
+					//yield return GetWaitForSeconds(.05f);
 					_eventManager.InvokePlayerTurnStart();
 					break;
 				case GameState.EnemyTurn:
 					//Execute commands registered by player in last turn
-					//ExecuteCommands();
 					_eventManager.InvokeUpdateHUD();
-					yield return GetWaitForSeconds(.05f);
+					//yield return GetWaitForSeconds(.05f);
 					_eventManager.InvokeEnemyTurnStart();
 					break;
 				case GameState.Lose:
@@ -166,6 +153,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 					_player.SetMoveState(false);
 					break;
 			}
+			_state = newState;
 		}
 
 		private void PlayerDeath()
@@ -175,7 +163,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void NextStage()
 		{
-			StartCoroutine(UpdateGameState(GameState.Win));
+			UpdateGameState(GameState.Win);
+			//StartCoroutine(UpdateGameState(GameState.Win));
 			//UpdateGameState(GameState.Win);
 			_mapManager.ResetMap();
 			_mapManager.InitializeMap();
@@ -200,16 +189,38 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			return _mapManager.GetPlayer();
 		}
 
-		public void ExecuteCommands()
+		private bool _executing = false;
+
+		private void TurnEnd()
 		{
+			if(_executing) 
+				return;
+			StartCoroutine(ExecuteCommands());
+		}
+
+		public IEnumerator ExecuteCommands()
+		{
+			_executing = true;
 			//TODO: Add initiative system and lock registration of commands after turn end
 			Debug.Log("Executing " + _actionList.Count + " commands");
 			foreach (var command in _actionList)
 			{
-				StartCoroutine(command.Execute());
-				//yield return GetWaitForSeconds(command.Duration);
+				//StartCoroutine(command.Execute());
+				command.Execute();
 			}
+			yield return GetWaitForSeconds(.1f);
 			_actionList.Clear();
+			_executing = false;
+			if (_state == GameState.PlayerTurn)
+			{
+				//StartCoroutine(UpdateGameState(GameState.EnemyTurn));
+				UpdateGameState(GameState.EnemyTurn);
+			}
+			else if (_state == GameState.EnemyTurn)
+			{
+				//StartCoroutine(UpdateGameState(GameState.PlayerTurn));
+				UpdateGameState(GameState.PlayerTurn);
+			}
 			//_eventManager.InvokeTurnEnd();
 		}
 
