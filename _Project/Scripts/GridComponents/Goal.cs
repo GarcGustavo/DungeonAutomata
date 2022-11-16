@@ -18,7 +18,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void OnTriggerEnter(Collider other)
 		{
-			if (other.gameObject.CompareTag("Player")) _eventManager.InvokePlayerGoalReached();
+			if (other.gameObject.CompareTag("Player")) _eventManager.InvokePlayerExit();
 		}
 	}
 }

@@ -60,20 +60,21 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_eventManager.OnStartGame += SpawnPlayer;
 			//_eventManager.OnPlayerMove += UpdatePlayerPosition;
 			_eventManager.OnMenu += ToggleMenu;
-			_eventManager.OnPlayerGoalReached += NextStage;
+			_eventManager.OnPlayerExit += NextStage;
 			_eventManager.OnPlayerDeath += PlayerDeath;
 			_eventManager.OnTurnEnd += TurnEnd;
 			_inventory = new List<ItemUnit>();
 			_actionList = new List<ICommand>();
 			_state = GameState.PlayerTurn;
 			_previousState = _state;
+			_turnCount = 0;
 		}
 
-		[SerializeField] private TileMapGenerator _generator;
+		[SerializeField] private MapGenerator _generator;
 		[Button]
 		private void GenerateNewMap()
 		{
-			_generator.GenerateMap();
+			_generator.GenerateSpriteMap();
 		}
 		
 		[Button]
@@ -138,10 +139,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 					_eventManager.InvokeUpdateHUD();
 					//yield return GetWaitForSeconds(.05f);
 					_eventManager.InvokePlayerTurnStart();
+					_player.SetMoveState(true);
 					break;
 				case GameState.EnemyTurn:
 					//Execute commands registered by player in last turn
 					_eventManager.InvokeUpdateHUD();
+					_player.SetMoveState(false);
 					//yield return GetWaitForSeconds(.05f);
 					_eventManager.InvokeEnemyTurnStart();
 					break;
@@ -163,11 +166,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void NextStage()
 		{
-			UpdateGameState(GameState.Win);
+			//UpdateGameState(GameState.Win);
 			//StartCoroutine(UpdateGameState(GameState.Win));
 			//UpdateGameState(GameState.Win);
 			_mapManager.ResetMap();
 			_mapManager.InitializeMap();
+			UpdateGameState(GameState.PlayerTurn);
 		}
 
 		//-------------------------------------------------------------------
@@ -200,10 +204,13 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		public IEnumerator ExecuteCommands()
 		{
+			_turnCount++;
 			_executing = true;
+			var commands = _actionList.ToArray();
 			//TODO: Add initiative system and lock registration of commands after turn end
 			Debug.Log("Executing " + _actionList.Count + " commands");
-			foreach (var command in _actionList)
+			Debug.Log("Turn: " + _turnCount);
+			foreach (var command in commands)
 			{
 				//StartCoroutine(command.Execute());
 				command.Execute();

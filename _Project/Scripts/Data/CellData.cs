@@ -24,7 +24,7 @@ namespace DungeonAutomata._Project.Scripts.Data
 			tileData.sprite = cellSprite;
 			gridPosition = position;
 		}
-
+		
 	}
 	public enum CellTypes
 	{

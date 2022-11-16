@@ -10,15 +10,15 @@ namespace DungeonAutomata._Project.Editor
 		{
 			if (GUILayout.Button("Generate Map"))
 			{
-				var generator = target as TileMapGenerator;
+				var generator = target as MapGenerator;
 				if (generator != null)
 				{
-					generator.GenerateMap();
+					generator.GenerateSpriteMap();
 				} 
 			}
 			if (GUILayout.Button("Clear Map"))
 			{
-				var generator = target as TileMapGenerator;
+				var generator = target as MapGenerator;
 				if (generator != null) generator.ClearMap();
 			}
 			base.OnInspectorGUI();

@@ -22,8 +22,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public event Action OnStartGame;
 		public event Action OnPlayerSpawn;
 		public event Action OnMenu;
-		public event Action OnPlayerTurnStart;
 		public event Action OnEnemyTurnStart;
+		public event Action OnPlayerTurnStart;
 		public event Action OnPlayerTurnEnd;
 		public event Action OnEnemyTurnEnd;
 		public event Action OnTurnEnd;
@@ -32,7 +32,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public event Action<int> OnPlayerDamaged;
 		public event Action<int> OnPlayerHealed;
 		public event Action OnPlayerDeath;
-		public event Action OnPlayerGoalReached;
+		public event Action OnPlayerExit;
 		public event Action OnPlayerAction;
 		public event Action<IItem> OnItemSelect; 
 		public event Action<Vector3Int> OnPlayerMove;
@@ -146,9 +146,9 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			OnPlayerHealed?.Invoke(hp);
 		}
 
-		public void InvokePlayerGoalReached()
+		public void InvokePlayerExit()
 		{
-			OnPlayerGoalReached?.Invoke();
+			OnPlayerExit?.Invoke();
 		}
 
 		public void InvokePlayerDeath()

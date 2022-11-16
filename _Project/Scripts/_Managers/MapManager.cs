@@ -5,12 +5,13 @@ using DungeonAutomata._Project.Scripts.GridComponents;
 using DungeonAutomata._Project.Scripts.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 using Random = UnityEngine.Random;
 
 namespace DungeonAutomata._Project.Scripts._Managers
 {
-	[RequireComponent(typeof(TileMapGenerator))]
+	[RequireComponent(typeof(MapGenerator))]
 	public class MapManager : MonoBehaviour
 	{
 		public static MapManager Instance { get; private set; }
@@ -28,7 +29,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		[SerializeField] private ItemData foodData;
 		[SerializeField] private ItemData healthData;
 	
-		public TileMapGenerator tileMapGenerator;
+		[FormerlySerializedAs("tileMapGenerator")] public MapGenerator mapGenerator;
 		private GameManager _gameManager;
 		private EventManager _eventManager;
 		private UIManager _uiManager;
@@ -41,6 +42,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private List<Vector3Int> _enemySpawnPoints;
 		private List<Vector3Int> _itemSpawnPoints;
 		private List<Vector3Int> _visibleCells;
+		private List<Vector3Int> _exitRoom;
 	
 		//Main reference point to get occupant info from
 		private CellData[,] _gridMap;
@@ -68,7 +70,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_eventManager = EventManager.Instance;
 			_gameManager = GameManager.Instance;
 			_uiManager = UIManager.Instance;
-			tileMapGenerator = GetComponent<TileMapGenerator>();
+			mapGenerator = GetComponent<MapGenerator>();
 			_items = new List<ItemUnit>();
 			_enemies = new List<EnemyUnit>();
 			_unitsToMove = new List<IUnit>();
@@ -94,15 +96,30 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		public void InitializeMap()
 		{
-			tileMapGenerator.GenerateMap();
-			tileMap = tileMapGenerator.GetTileMap();
-			_gridMap = tileMapGenerator.GetCellMap();
-			highLightMap = tileMapGenerator.GetHighlightMap();
+			mapGenerator.GenerateSpriteMap();
+			tileMap = mapGenerator.GetTileMap();
+			_gridMap = mapGenerator.GetCellMap();
 			highLightMap.ClearAllTiles();
 			highLightMap.RefreshAllTiles();
+			SetExit();
 			SpawnPlayer();
 			SpawnEnemies();
 			SpawnItems();
+		}
+
+		private void SetExit()
+		{
+			var rooms = mapGenerator.GetRooms();
+			_exitRoom = rooms[Random.Range(0, rooms.Count)];
+			var exitCell = _exitRoom[Random.Range(0, _exitRoom.Count)];
+			while (_gridMap[exitCell.x, exitCell.y].Occupant != null 
+			       && !_gridMap[exitCell.x, exitCell.y].isWalkable)
+			{ 
+				exitCell = _exitRoom[Random.Range(0, _exitRoom.Count)];
+			}
+			_gridMap[exitCell.x, exitCell.y].cellType = CellTypes.Exit;
+			tileMap.SetColor(exitCell, Color.yellow);
+			tileMap.SetTile(exitCell, _gridMap[exitCell.x, exitCell.y]);
 		}
 
 		public void ResetMap()
@@ -214,14 +231,15 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void RemoveUnitToMove(IUnit unit)
 		{
-			_gridMap[unit.CurrentTile.x, unit.CurrentTile.y].Occupant = null;
-			_gridMap[unit.CurrentTile.x, unit.CurrentTile.y].isWalkable = true;
+			//_gridMap[unit.CurrentTile.x, unit.CurrentTile.y].Occupant = null;
+			//_gridMap[unit.CurrentTile.x, unit.CurrentTile.y].isWalkable = true;
 			_unitsToMove.Remove(unit);
 		}
 
 		private void CheckUnitsToMove(IUnit unit)
 		{
-			if (_unitsToMove.Contains(unit))
+			var units = _unitsToMove;
+			if (units.Contains(unit))
 			{
 				_unitsToMove.Remove(unit);
 				if (_unitsToMove.Count == 0)
@@ -235,7 +253,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 					}
 				}
 			}
-			else if (_unitsToMove.Count <= 0)
+			else if (units.Count <= 0)
 			{
 				_eventManager.InvokeTurnEnd();
 				//_eventManager.InvokeEnemyTurnEnd();
@@ -248,7 +266,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		
 		private void SpawnPlayer()
 		{
-			var rooms = tileMapGenerator.GetRooms();
+			var rooms = mapGenerator.GetRooms();
 			//_playerSpawnPoint = tileMapGenerator.GetPlayerSpawnPosition();
 			
 			//TODO: Add value map logic to spawn player in the best position
@@ -279,7 +297,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private void SpawnEnemies()
 		{
 			_enemySpawnPoints = new List<Vector3Int>();
-			var rooms = tileMapGenerator.GetRooms();
+			var rooms = mapGenerator.GetRooms();
 			foreach (var room in rooms)
 			{
 				if (room != _startingRoom)
@@ -313,7 +331,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			//Spawn items at available tiles
 			_itemSpawnPoints = new List<Vector3Int>();
-			var rooms = tileMapGenerator.GetRooms();
+			var rooms = mapGenerator.GetRooms();
 			foreach (var room in rooms)
 			{
 				if (room != _startingRoom)
@@ -337,7 +355,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				var item = prefab.GetComponent<ItemUnit>();
 				
 				//Eventually move logic to a level director or something
-				item.InitializeItem(Random.Range(0, 100) < 50 ? foodData : healthData);
+				item.InitializeItem(Random.Range(0, 100) < 50 ? foodData : healthData, item);
 
 				item.CurrentTile = gridPos;
 				_gridMap[gridPos.x, gridPos.y].Occupant = item;
@@ -354,12 +372,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		
 		public CellData[,] GetCellMap()
 		{
-			return tileMapGenerator.GetCellMap();
+			return mapGenerator.GetCellMap();
 		}
 
 		public Tilemap GetTileMap()
 		{
-			return tileMapGenerator.GetTileMap();
+			return mapGenerator.GetTileMap();
 		}
 
 		public PlayerUnit GetPlayer()
@@ -375,7 +393,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public void UpdateCellMap(CellData[,] map)
 		{
 			_gridMap = map;
-			tileMapGenerator.UpdateCellMap(_gridMap);
+			mapGenerator.UpdateCellMap(_gridMap);
 		}
 
 		#endregion
@@ -383,37 +401,37 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		#region VALUEMAPS
 		private void UpdatePlayerMap()
 		{
-			_playerMap = GridUtils.GetDijkstraMap(_player.CurrentTile, tileMapGenerator.GetCellMap());
+			_playerMap = GridUtils.GetDijkstraMap(_player.CurrentTile, mapGenerator.GetCellMap());
 		}
 		
 		private void UpdateEnemyMap(List<Vector3Int> enemyPositions)
 		{
-			_enemyMap = GridUtils.GetDijkstraMap(enemyPositions, tileMapGenerator.GetCellMap());
+			_enemyMap = GridUtils.GetDijkstraMap(enemyPositions, mapGenerator.GetCellMap());
 		}
 		
 		private void UpdateItemMap(List<Vector3Int> itemPositions)
 		{
-			_itemMap = GridUtils.GetDijkstraMap(itemPositions, tileMapGenerator.GetCellMap());
+			_itemMap = GridUtils.GetDijkstraMap(itemPositions, mapGenerator.GetCellMap());
 		}
 		
 		private void UpdatePredatorMap(List<Vector3Int> predatorPositions)
 		{
-			_predatorMap = GridUtils.GetDijkstraMap(predatorPositions, tileMapGenerator.GetCellMap());
+			_predatorMap = GridUtils.GetDijkstraMap(predatorPositions, mapGenerator.GetCellMap());
 		}
 		
 		private void UpdatePreyMap(List<Vector3Int> preyPositions)
 		{
-			_preyMap = GridUtils.GetDijkstraMap(preyPositions, tileMapGenerator.GetCellMap());
+			_preyMap = GridUtils.GetDijkstraMap(preyPositions, mapGenerator.GetCellMap());
 		}
 		
 		private void UpdateFoodMap(List<Vector3Int> foodPositions)
 		{
-			_foodMap = GridUtils.GetDijkstraMap(foodPositions, tileMapGenerator.GetCellMap());
+			_foodMap = GridUtils.GetDijkstraMap(foodPositions, mapGenerator.GetCellMap());
 		}
 		
 		private void UpdateWaterMap(List<Vector3Int> waterPositions)
 		{
-			_waterMap = GridUtils.GetDijkstraMap(waterPositions, tileMapGenerator.GetCellMap());
+			_waterMap = GridUtils.GetDijkstraMap(waterPositions, mapGenerator.GetCellMap());
 		}
 
 		public int[,] GetPlayerMap()

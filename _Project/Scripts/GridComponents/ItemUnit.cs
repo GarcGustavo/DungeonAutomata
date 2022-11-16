@@ -17,6 +17,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public Sprite Icon { get; set; }
 		public string UnitName { get; set; }
 		public string Description { get; set; }
+
+		public IUnit GridUnit { get; set; }
 		
 
 		private void Awake()
@@ -30,10 +32,11 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			
 		}
 
-		public void InitializeItem(ItemData itemData)
+		public void InitializeItem(ItemData itemData, IUnit unit)
 		{
 			Icon = itemData.sprite;
 			_spriteRenderer.sprite = itemData.sprite;
+			GridUnit = unit;
 			UnitName = itemData.itemName;
 			Description = itemData.description;
 			ItemType = itemData.itemType;

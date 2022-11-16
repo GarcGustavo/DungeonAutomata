@@ -55,7 +55,6 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			_mapManager = MapManager.Instance;
 			_eventManager.OnPlayerDamaged += Damage;
 			//_eventManager.OnPlayerAction += UseEnergy;
-			_eventManager.OnPlayerTurnStart += RefillEnergy;
 			CurrentTile = new Vector3Int();
 			UnitName = playerData.name;
 		}
@@ -101,23 +100,16 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			              $"Thirst: {Thirst}\n";
 		}
 
-		public void RefillEnergy()
-		{
-			SetMoveState(true);
-			CurrentEnergy = MaxEnergy;
-		}
-
 		public void UseEnergy()
 		{
 			if (CurrentEnergy <= 0)
 			{
-				SetMoveState(false);
+				CurrentEnergy = MaxEnergy;
 				_eventManager.InvokeTurnEnd();
 			}
 			else
 			{
 				CurrentEnergy--;
-				SetMoveState(true);
 				_eventManager.InvokePlayerAction();
 			}
 		}
@@ -230,7 +222,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				else if (Input.GetKey(KeyCode.Space) && !Input.GetKeyUp(KeyCode.Space))
 				{
 					//Essentially a fast forward button
-					_eventManager.InvokePlayerAction();
+					//_eventManager.InvokePlayerAction();
 					UseEnergy();
 				}
 			}

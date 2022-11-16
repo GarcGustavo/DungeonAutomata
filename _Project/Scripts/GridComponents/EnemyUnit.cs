@@ -174,6 +174,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public void Die()
 		{
 			_eventManager.InvokeUnitDeath(this);
+			_cellMap[CurrentTile.x, CurrentTile.y].Occupant = null;
+			_cellMap[CurrentTile.x, CurrentTile.y].isWalkable = true;
 			gameObject.SetActive(false);
 		}
 
@@ -223,7 +225,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Rest()
 		{
-			Move(Vector3Int.zero);
+			_eventManager.InvokeUnitAction(this);
 		}
 		
 		public void Eat()

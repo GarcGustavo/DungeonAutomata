@@ -12,6 +12,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		private bool _dragging = false;
 		private float _distance;
 		private Vector3 _startDist;
+		//private IUnit _unit;
 		private IUnit _unit;
 		private SpriteRenderer _renderer;
 		private Vector3 _rayPoint = Vector3.zero;

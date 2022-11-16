@@ -83,7 +83,7 @@ namespace DungeonAutomata._Project.Editor
 						data = playerData;
 						break; 
 					case "ShapeData":
-						var shapeData = CreateInstance<ShapeData>();
+						var shapeData = CreateInstance<ShapeDataEditor>();
 						data = shapeData;
 						break; 
 					default:

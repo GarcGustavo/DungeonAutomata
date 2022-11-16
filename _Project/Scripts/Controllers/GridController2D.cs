@@ -93,6 +93,11 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		private bool IsFreeCell(CellData cell)
 		{
 			//TODO: optimize and organize
+			if (cell.cellType == CellTypes.Exit)
+			{
+				_eventManager.InvokePlayerExit();
+				return false;
+			}
 			if (cell.Occupant != null)
 			{
 				//Enemy collision logic
@@ -104,7 +109,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 					{
 						var positions = new List<Vector3Int>();
 						positions.Add(cell.Occupant.CurrentTile);
-						Debug.Log("Attacking: " + cell.gridPosition);
+						//Debug.Log("Attacking: " + cell.gridPosition);
 						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
 							_currentPosition, 
 							cell.gridPosition, 

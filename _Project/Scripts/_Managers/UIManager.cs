@@ -117,7 +117,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			foreach (IItem item in items)
 			{
 				var itemContainer = Instantiate(inventoryItem, inventoryPanel);
-				itemContainer.SetItem(item);
+				itemContainer.SetItem(item, item.GridUnit);
 				// itemIcon.GetComponent<Button>().onClick.AddListener(() =>
 				// {
 				// 	_eventManager.InvokeItemSelect(item);
