@@ -12,6 +12,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private ItemData _itemData;
 		private SpriteRenderer _spriteRenderer;
 		private MapManager _mapManager;
+		private EventManager _eventManager;
 		public Vector3Int CurrentTile { get; set; }
 		public ItemType ItemType { get; set; }
 		public Sprite Icon { get; set; }
@@ -25,6 +26,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			_spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 			_mapManager = MapManager.Instance;
+			_eventManager = EventManager.Instance;
 			//Icon = _itemData.sprite;
 			//UnitName = _itemData.itemName;
 			//Description = _itemData.description;
@@ -83,24 +85,31 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public void SetPosition(Vector3Int position)
 		{
 			var cellMap = _mapManager.GetCellMap();
-			cellMap = _mapManager.GetCellMap();
-			if (cellMap != null
-			    && cellMap[position.x, position.y] != null
-			    && cellMap[position.x, position.y].Occupant == null
-			    && cellMap[position.x, position.y].isWalkable)
+			if (cellMap != null)
 			{
-				cellMap[CurrentTile.x, CurrentTile.y].Occupant = null;
-				cellMap[CurrentTile.x, CurrentTile.y].isWalkable = true;
-				cellMap[position.x, position.y].Occupant = this;
-				cellMap[position.x, position.y].isWalkable = false;
-				//need to refactor, used to be isEmpty
-				transform.position = position;
-				CurrentTile = position;
-				_mapManager.UpdateCellMap(cellMap);
-			}
-			else
-			{
-				transform.position = CurrentTile;
+				var currentCell = cellMap[position.x, position.y];
+				if (currentCell != null
+				    && cellMap[position.x, position.y].Occupant == null
+				    && cellMap[position.x, position.y].isWalkable)
+				{
+					var previousCell = cellMap[CurrentTile.x, CurrentTile.y];
+				
+					previousCell.Occupant = null;
+					previousCell.isWalkable = true;
+					currentCell.Occupant = this;
+					currentCell.isWalkable = false;
+					//need to refactor, used to be isEmpty
+					transform.position = position;
+					CurrentTile = position;
+				
+					_eventManager.InvokeCellUpdate(previousCell);
+					_eventManager.InvokeCellUpdate(currentCell);
+					//_mapManager.UpdateCellMap(cellMap);
+				}
+				else
+				{
+					transform.position = CurrentTile;
+				}
 			}
 		}
 

@@ -173,9 +173,11 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Die()
 		{
+			var cell = _cellMap[CurrentTile.x, CurrentTile.y];
+			cell.Occupant = null;
+			cell.isWalkable = true;
+			_eventManager.InvokeCellUpdate(cell);
 			_eventManager.InvokeUnitDeath(this);
-			_cellMap[CurrentTile.x, CurrentTile.y].Occupant = null;
-			_cellMap[CurrentTile.x, CurrentTile.y].isWalkable = true;
 			gameObject.SetActive(false);
 		}
 

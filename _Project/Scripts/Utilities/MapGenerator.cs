@@ -1,9 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts.Data;
 using DungeonAutomata._Project.Scripts.GridComponents;
+using DungeonAutomata._Project.Scripts.Utilities.Algorithms;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Diagnostics;
@@ -14,6 +16,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 {
 	public class MapGenerator : MonoBehaviour
 	{
+		private enum GenerationType { Automata, BSP }
 		[SerializeField] private Tilemap targetMap;
 		[SerializeField] private int width;
 		[SerializeField] private int height;
@@ -24,14 +27,18 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		[SerializeField] private CellData groundCell;
 		[SerializeField] private CellData waterCell;
 		[SerializeField] private GameObject cube;
+		[SerializeField] private GenerationType generationType = GenerationType.Automata;
 		
-		private int _circleRadius = 3;
-		private int _smoothingIterations = 3;
+		private int _circleRadius = 1;
+		private int _smoothingIterations = 2;
 		private int _roomAmount = 10;
 		private float _randomFillPercent = 50f;
 		private CellData[,] _map;
 		private CellData[,] _mapBuffer;
+		private BoundsInt _mapBounds;
+		private List<List<Vector3Int>> _bspSections;
 		private List<List<Vector3Int>> _rooms;
+		private List<List<Vector3Int>> _regions;
 		private List<GameObject> _cubeMap;
 
 		#region API
@@ -44,7 +51,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			DrawTilemap(_map);
 		}
 		
-		[Button]
 		public void GenerateCubeMap()
 		{
 			ClearMap();
@@ -66,12 +72,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			if(_cubeMap != null)
 				_cubeMap.ForEach(DestroyImmediate);
 		}
-		
-		//Getters to be accessed through manager singleton in order to decouple map generator from other systems
-		public Tilemap GetTileMap()
-		{
-			return targetMap;
-		}
 
 		public CellData[,] GenerateCellMap()
 		{
@@ -80,20 +80,64 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				seed = (int)DateTime.Now.Ticks;
 			}
 			_map = new CellData[width,height];
-			RandomFillMap();
-			SmoothMap(_smoothingIterations);
+			_rooms = new List<List<Vector3Int>>();
+			//Move into generate method and find closest room method
 			//Modify to avoid backtracking by adding cyclic paths
-			ProcessMap();
-			GenerateRooms(_roomAmount);
-			var foundRooms = FindRooms();
-			var currentRoom = _rooms[0];
-			foreach (var room in _rooms)
+			
+			//Foundrooms is temporary test to detect regions/biomes
+			var foundRooms = new List<List<Vector3Int>>();
+			if (generationType == GenerationType.Automata)
 			{
-				if(currentRoom != room)
-					ConnectRooms(currentRoom, room);
-				currentRoom = room;
+				RandomFillMap(_map);
+				SmoothMap(_map, _smoothingIterations);
+				ProcessMap(_map);
+				_rooms = GenerateRooms(_roomAmount);
+				foundRooms = FindRooms();
+			}
+			else if (generationType == GenerationType.BSP)
+			{
+				FillMap();
+				var bsp = SplitMap(_map);
+				foundRooms.Add(bsp);
+				_rooms = foundRooms;
+			}
+			
+			var connectedRooms = new List<List<Vector3Int>>();
+			foreach (var room in foundRooms)
+			{
+				
+				var currentRoom = room;
+				var random = new Random();
+				var idx = random.Next(foundRooms.Count);
+				var nextRoom = foundRooms[idx];
+				var nextClosestRoom = foundRooms[idx];
+				var roomsConnected = false;
+
+				//FindClosestRoom(currentRoom[0]);
+				var distance = GridUtils.GetCellDistance(currentRoom[0], foundRooms[0][0]);
+				
+				for (int i = 0; i < foundRooms.Count; i++ )
+				{
+					if (currentRoom != foundRooms[i] 
+					    && GridUtils.GetCellDistance(currentRoom[0], foundRooms[i][0]) < distance)
+					{
+						nextClosestRoom = nextRoom;
+						nextRoom = foundRooms[i];
+						distance = GridUtils.GetCellDistance(currentRoom[0], foundRooms[i][0]);
+					}
+				}
+				
+				ConnectRooms(currentRoom, nextRoom);
+				ConnectRooms(currentRoom, nextClosestRoom);
+				connectedRooms.Add(currentRoom);
 			}
 			return _map;
+		}
+		
+		//Getters to be accessed through manager singleton in order to decouple map generator from other systems
+		public Tilemap GetTileMap()
+		{
+			return targetMap;
 		}
 		
 		public CellData[,] GetCellMap()
@@ -115,7 +159,28 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 
 		#region MAPGEN
 
-		private void RandomFillMap()
+		private void FillMap()
+		{
+			for (var x = 0; x < width; x++)
+			{
+				for (var y = 0; y < height; y++)
+				{
+					if (x == 0 || x == width-1 || y == 0 || y == height-1) 
+					{
+						//Create borders
+						var newTile = Instantiate(wallCell);
+						_map[x,y] = newTile;
+					}
+					else
+					{
+						var newTile = Instantiate(groundCell);
+						_map[x, y] = newTile;
+					}
+				}
+			}
+		}
+
+		private void RandomFillMap(CellData[,] map)
 		{
 			var prng = new Random(seed);
 			
@@ -138,7 +203,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 		}
 		
-		private void SmoothMap(int iterations)
+		private void SmoothMap(CellData[,] map, int iterations)
 		{
 			for (int i = 0; i < iterations; i++)
 			{
@@ -176,9 +241,9 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 		}
 
-		private void GenerateRooms(int amount)
+		private List<List<Vector3Int>> GenerateRooms(int amount)
 		{
-			_rooms = new List<List<Vector3Int>>();
+			var rooms = new List<List<Vector3Int>>();
 			var random = new Random(seed);
 			var roomList = new List<int[,]>();
 			//Generate an initial batch of rooms, might expand later for determining biomes
@@ -191,27 +256,40 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			{
 				//TODO: finish BSP implementation
 				//var splitMap = SplitMap(_map, roomList);
-				PlaceRoom(room, _map);
+				rooms.Add(PlaceRoom(room));
 			}
+			return rooms;
 		}
 
-		private void PlaceRoom(int[,] room, CellData[,] map)
+		private List<Vector3Int> PlaceRoom(int[,] room)
 		{
 			Random random = new Random(seed);
 			var roomFits = false;
 			var placementAttempts = 0;
 			var roomWidth = room.GetLength(0);
 			var roomHeight = room.GetLength(1);
+			var roomPositions = new List<Vector3Int>();
 			while (!roomFits)
 			{
 				if (placementAttempts > 100)
 					break;
+				
 				var roomOrigin = new Vector3Int(
-					random.Next(roomWidth + 1, map.GetLength(0) - roomWidth - 1),
-					random.Next(roomHeight + 1, map.GetLength(1) - roomHeight - 1));
+					random.Next(roomWidth + 1, _map.GetLength(0) - roomWidth - 1),
+					random.Next(roomHeight + 1, _map.GetLength(1) - roomHeight - 1));
 
-				var roomCells = GridUtils.GetCellsInShape(roomOrigin, room, map);
-
+				//If room is too close to other rooms, try again
+				if (_rooms.Count > 0)
+				{
+					var closestRoom = FindClosestRoom(roomOrigin);
+					if (GridUtils.GetCellDistance(roomOrigin, closestRoom[0]) < 5)
+					{
+						placementAttempts++;
+						continue;
+					}
+				}
+				
+				var roomCells = GridUtils.GetCellsInShape(roomOrigin, room, _map);
 				foreach (var cell in roomCells)
 				{
 					roomFits = (cell.cellType == CellTypes.Wall);
@@ -222,12 +300,24 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				if (roomFits)
 				{
 					placementAttempts = 0;
-					MergeRoomToMap(roomOrigin, room);
+					roomPositions = MergeRoomToMap(roomOrigin, room);
 				}
 
 				placementAttempts++;
 				random = new Random(seed + placementAttempts);
 			}
+
+			return roomPositions;
+		}
+		
+		private List<Vector3Int> MergeRoomToMap(Vector3Int origin, int[,] room)
+		{
+			var roomPositions = GridUtils.GetPositionsInShape(origin, room);
+			foreach (var cell in roomPositions)
+			{
+				_map[cell.x, cell.y] = Instantiate(groundCell);
+			}
+			return roomPositions;
 		}
 
 		private void ConnectRooms(List<Vector3Int> startRoom, List<Vector3Int> endRoom)
@@ -247,7 +337,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			int[,] mapFlags = new int[width,height];
 			for (int x = 0; x < width; x ++) {
 				for (int y = 0; y < height; y ++) {
-					if (mapFlags[x,y] == 0 && _map[x,y].cellType == CellTypes.Wall) 
+					if (mapFlags[x,y] == 0 && _map[x,y].cellType == CellTypes.Ground) 
 					{
 						List<Vector3Int> newRegion = GetRegionTiles(x,y);
 						rooms.Add(newRegion);
@@ -262,61 +352,58 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			return rooms;
 		}
 
-		//Binary space partitioning
-		private CellData[,] SplitMap(CellData[,] map, List<int[,]> roomList)
+		private List<Vector3Int> FindClosestRoom(Vector3Int roomOrigin)
 		{
+			var closestRoom = new List<Vector3Int>();
+			var distance = 1000f;
+			foreach (var room in _rooms)
+			{
+				if (GridUtils.GetCellDistance(roomOrigin, room[0]) < distance)
+				{
+					closestRoom = room;
+					distance = GridUtils.GetCellDistance(roomOrigin, room[0]);
+				}
+			}
+			return closestRoom;
+		}
+
+		//Binary space partitioning, returns a list of rooms (which in turn are lists of cell locations)
+		private List<Vector3Int> SplitMap(CellData[,] map)
+		{
+			//_bspSections = new List<List<Vector3Int>>();
+			var bspRooms = new List<Vector3Int>();
 			var mapWidth = map.GetLength(0);
 			var mapHeight = map.GetLength(1);
-			var newMap = new CellData[mapWidth, mapHeight];
-			var left = new CellData[mapWidth, mapHeight];
-			var right = new CellData[mapWidth, mapHeight];
-			var direction = new Random(seed).Next(0, 2);
-			var splitPoint = new Random(seed).Next(1, direction == 0 ? mapWidth - 1 : mapHeight - 1);
-			var timesToSplit = new Random(seed).Next(1, 3);
 			
-			//Split map in half
-			for (int i = 0; i < timesToSplit; i++)
+			var direction = new Random(seed).Next(0, 1);
+			var splitPoint = new Random(seed).Next(1, direction == 0 ? mapWidth - 1 : mapHeight - 1);
+			
+			//TODO: Figure out heuristic for determining boundInt start position
+			_mapBounds = new BoundsInt(new Vector3Int(0, 0, 0), new Vector3Int(width, height, 1));
+			
+			//TODO: Heuristic for minimum room size and pre-built room
+			var boundRooms = ProcGenUtils.BinarySpacePartitioning(_mapBounds, 5, 5);
+			bspRooms = CreateRoomsFromBounds(boundRooms);
+			
+			return bspRooms;
+		}
+
+		private List<Vector3Int> CreateRoomsFromBounds(List<BoundsInt> roomsList)
+		{
+			var offset = 1;
+			var floor = new List<Vector3Int>();
+			foreach (var room in roomsList)
 			{
-				if (direction == 0)
+				for (int col = offset; col < room.size.x - offset; col++)
 				{
-					for (int x = 0; x < mapWidth; x++)
+					for (int row = offset; row < room.size.y - offset; row++)
 					{
-						for (int y = 0; y < mapHeight; y++)
-						{
-							if (x < splitPoint)
-							{
-								newMap[x, y] = map[x, y];
-								left[x, y] = map[x, y];
-							}
-							else
-							{
-								newMap[x, y] = Instantiate(wallCell);
-							}
-						}
+						var position = room.min + new Vector3Int(col, row);
+						floor.Add(position);
 					}
 				}
-				else
-				{
-					for (int x = 0; x < mapWidth; x++)
-					{
-						for (int y = 0; y < mapHeight; y++)
-						{
-							if (y < splitPoint)
-							{
-								newMap[x, y] = map[x, y];
-								right[x, y] = map[x, y];
-							}
-							else
-							{
-								newMap[x, y] = Instantiate(wallCell);
-							}
-						}
-					}
-				}
-				direction = new Random(seed).Next(0, 2);
-				splitPoint = new Random(seed).Next(1, direction == 0 ? mapWidth - 1 : mapHeight - 1);
 			}
-			return newMap;
+			return floor;
 		}
 		
 		private int[,] CreateRoom(int roomWidth, int roomHeight)
@@ -331,18 +418,8 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 			return room;
 		}
-		
-		private void MergeRoomToMap(Vector3Int origin, int[,] room)
-		{
-			var roomPositions = GridUtils.GetPositionsInShape(origin, room);
-			_rooms.Add(roomPositions);
-			foreach (var cell in roomPositions)
-			{
-				_map[cell.x, cell.y] = Instantiate(groundCell);
-			}
-		}
 
-		private void ProcessMap() {
+		private void ProcessMap(CellData[,] map) {
 			List<List<Vector3Int>> wallRegions = GetRegions(CellTypes.Wall);
 			int wallThresholdSize = 50;
 

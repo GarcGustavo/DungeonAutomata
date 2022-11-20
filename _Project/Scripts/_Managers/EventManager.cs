@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DungeonAutomata._Project.Scripts._Interfaces;
+using DungeonAutomata._Project.Scripts.Data;
 using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts._Managers
@@ -35,16 +36,18 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public event Action OnPlayerExit;
 		public event Action OnPlayerAction;
 		public event Action<IItem> OnItemSelect; 
-		public event Action<Vector3Int> OnPlayerMove;
 
-		// General Unit Events, possibly need to add unique id to each unit
+		// General Unit Events
 		public event Action<IUnit, List<Vector3Int>> OnAttack;
 		public event Action<IItem> OnPickup;
 		public event Action OnUpdateInventory;
 		public event Action OnUpdateHUD;
-		public event Action<Vector3Int> OnUnitMove;
 		public event Action<IUnit> OnUnitAction;
 		public event Action<IUnit> OnUnitDeath;
+
+		//General map update events
+		public event Action<CellData> OnCellUpdate;
+		public event Action<CellData[,]> OnMapUpdate;
 
 		#region Invokes
 
@@ -95,14 +98,13 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		}
 
 		// Unit Events
-		public void InvokePlayerMove(Vector3Int position)
+		public void InvokeMapUpdate(CellData[,] map)
 		{
-			OnPlayerMove?.Invoke(position);
+			OnMapUpdate?.Invoke(map);
 		}
-
-		public void InvokeUnitMove(Vector3Int position)
+		public void InvokeCellUpdate(CellData cell)
 		{
-			OnUnitMove?.Invoke(position);
+			OnCellUpdate?.Invoke(cell);
 		}
 
 		public void InvokeUnitAction(IUnit unit)

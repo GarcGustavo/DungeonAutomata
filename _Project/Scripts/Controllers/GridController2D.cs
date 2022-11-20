@@ -57,8 +57,11 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		public void SetPosition(Vector3Int position)
 		{
 			var previousCell = cellMap[_unit.CurrentTile.x, _unit.CurrentTile.y];
-			previousCell.Occupant = null;
-			previousCell.isWalkable = true;
+			if (previousCell != null)
+			{
+				previousCell.Occupant = null;
+				previousCell.isWalkable = true;
+			}
 			
 			var currentCell = cellMap[position.x, position.y];
 			currentCell.Occupant = _unit;
@@ -66,7 +69,9 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			
 			_currentPosition = position;
 			transform.position = position;
-			_mapManager.UpdateCellMap(cellMap);
+			_eventManager.InvokeCellUpdate(previousCell);
+			_eventManager.InvokeCellUpdate(currentCell);
+			//_mapManager.UpdateCellMap(cellMap);
 		}
 
 		public void MoveUnit(Vector3Int pos)
