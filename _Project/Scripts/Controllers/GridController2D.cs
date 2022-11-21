@@ -77,9 +77,10 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		public void MoveUnit(Vector3Int pos)
 		{
 			_currentPosition = _unit.CurrentTile;
-			if (tilemap.HasTile(pos))
+			cellMap = _mapManager.GetCellMap();
+			//if (tilemap.HasTile(pos))
+			if (cellMap[pos.x, pos.y] != null)
 			{
-				cellMap = _mapManager.GetCellMap();
 				var previousCell = cellMap[_currentPosition.x, _currentPosition.y];
 				var cell = cellMap[pos.x, pos.y];
 				if (!IsFreeCell(cell)) 

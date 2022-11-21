@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 521544708}
   - component: {fileID: 521544710}
   - component: {fileID: 2578540599495078133}
+  - component: {fileID: 1210785415651212794}
   m_Layer: 0
   m_Name: Enemy
   m_TagString: Untagged
@@ -73,7 +74,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51d22bfc77354f6294ba5f97061f17ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _viewDistance: 5
   _enemyData: {fileID: 11400000, guid: 073f866fd202da4489990480f87b540c, type: 2}
 --- !u!114 &2578540599495078133
 MonoBehaviour:
@@ -89,6 +89,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveCD: 0.1
   feedbacks: {fileID: 0}
+--- !u!114 &1210785415651212794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 984394959846426848}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c29ae07522c44d0be1a7c7d422c94a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &984394960062898729
 GameObject:
   m_ObjectHideFlags: 0
@@ -161,7 +173,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 1
+  m_SortingOrder: 4
   m_Sprite: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

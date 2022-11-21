@@ -27,8 +27,10 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		[SerializeField] private CellData groundCell;
 		[SerializeField] private CellData waterCell;
 		[SerializeField] private GameObject cube;
+		[SerializeField] private bool isometric;
 		[SerializeField] private GenerationType generationType = GenerationType.Automata;
 		
+		private Grid targetGrid;
 		private int _circleRadius = 1;
 		private int _smoothingIterations = 2;
 		private int _roomAmount = 10;
@@ -46,6 +48,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		[Button]
 		public void GenerateSpriteMap()
 		{
+			targetGrid = targetMap.GetComponentInParent<Grid>();
 			ClearMap();
 			GenerateCellMap();
 			DrawTilemap(_map);
@@ -618,14 +621,31 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			targetMap.ClearAllTiles();
 			targetMap.CompressBounds();
 			targetMap.RefreshAllTiles();
-			for (var i = 0; i < cellMap.GetLength(0); i++)
+			
+			if (!isometric)
 			{
-				for (var j = 0; j < cellMap.GetLength(1); j++)
+				targetGrid.cellLayout = GridLayout.CellLayout.Rectangle;
+				targetGrid.cellSwizzle = GridLayout.CellSwizzle.XYZ;
+				for (var i = 0; i < cellMap.GetLength(0); i++)
 				{
-					targetMap.SetTile(new Vector3Int(i, j), _map[i,j]);
+					for (var j = 0; j < cellMap.GetLength(1); j++)
+					{
+						targetMap.SetTile(new Vector3Int(i, j), _map[i,j]);
+					}
 				}
 			}
-			
+			else
+			{
+				targetGrid.cellLayout = GridLayout.CellLayout.Isometric;
+				targetGrid.cellSwizzle = GridLayout.CellSwizzle.XYZ;
+				for (var i = 0; i < cellMap.GetLength(0); i++)
+				{
+					for (var j = 0; j < cellMap.GetLength(1); j++)
+					{
+						targetMap.SetTile(GridUtils.GetIsometricPos(new Vector3Int(i, j)), _map[i,j]);
+					}
+				}
+			}
 		}
 
 		//For testing 3D isometric mapgen

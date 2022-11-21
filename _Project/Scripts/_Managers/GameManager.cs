@@ -101,7 +101,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			
 			//Highlight tile under mouse
 			var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-			_mapManager.HighLightCell(mouseWorldPos);
+			_mapManager.HighLightCell(Vector3Int.FloorToInt(mouseWorldPos));
 		}
 
 		public void ResetCamera(Transform target)

@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Highlight
   m_EditorClassIdentifier: 
   cellSprite: {fileID: 21300000, guid: e1d3ae38118f5b443978dae567d3d2a0, type: 3}
-  gridPosition: {x: 0, y: 0, z: 0}
+  gridPosition: {x: 38, y: 90, z: 0}
   cellType: 0
-  isEmpty: 1
+  isWalkable: 1

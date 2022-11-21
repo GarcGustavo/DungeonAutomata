@@ -46,7 +46,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		//Main reference point to get occupant info from
 		private CellData[,] _gridMap;
 		private Tilemap _tileMap;
-		
+
 		//Dijkstra map objectives
 		private int[,] _playerMap;
 		private int[,] _enemyMap;
@@ -131,6 +131,10 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_gridMap[exitCell.x, exitCell.y].cellType = CellTypes.Exit;
 			_tileMap.SetColor(exitCell, Color.magenta);
 			_tileMap.SetTile(exitCell, _gridMap[exitCell.x, exitCell.y]);
+			_tileMap.SetTile(
+				grid.cellLayout == GridLayout.CellLayout.Isometric
+					? GridUtils.GetIsometricPos(exitCell)
+					: exitCell, _gridMap[exitCell.x, exitCell.y]);
 		}
 
 		public void ResetMap()
@@ -200,7 +204,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			}
 		}
 
-		public void HighLightCell(Vector3 cell)
+		//TODO: Overload for cell lists/shapes
+		public void HighLightCell(Vector3Int cell)
 		{
 			if (_tileMap == null) return;
 			if (_tileMap.HasTile(grid.WorldToCell(cell)))
@@ -208,10 +213,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				var cellData = _gridMap[grid.WorldToCell(cell).x, grid.WorldToCell(cell).y];
 				if (cellData == null) return;
 				highLightMap.ClearAllTiles();
-				highLightMap.SetTile(grid.WorldToCell(cell), highLightTile);
-				//TODO: replace material with highlight shader material instead of using second tilemap
-				var sprite = _tileMap.GetSprite(grid.WorldToCell(cell));
-				
+				highLightMap.SetTile(
+					grid.cellLayout == GridLayout.CellLayout.Isometric
+						? GridUtils.GetIsometricPos(grid.WorldToCell(cell))
+						: grid.WorldToCell(cell), highLightTile);
+
 				_visibleCells = GridUtils.GetLine(_player.CurrentTile, grid.WorldToCell(cell));
 				if (cellData.Occupant != null)
 				{
@@ -229,6 +235,13 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			//{
 			//	highLightMap.SetTile(visibleCell, highLightTile);
 			//}
+		}
+		public void HighLightCell(List<Vector3Int> cells)
+		{
+			foreach (var cell in cells)
+			{
+				HighLightCell(cell);
+			}
 		}
 
 		//Move to combat manager later
