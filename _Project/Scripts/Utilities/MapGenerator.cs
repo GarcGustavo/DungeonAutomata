@@ -49,6 +49,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		public void GenerateSpriteMap()
 		{
 			targetGrid = targetMap.GetComponentInParent<Grid>();
+			targetGrid.cellLayout = isometric? GridLayout.CellLayout.Isometric:GridLayout.CellLayout.Rectangle;
 			ClearMap();
 			GenerateCellMap();
 			DrawTilemap(_map);
@@ -63,7 +64,11 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 
 		private void CreateLake(List<Vector3Int> region)
 		{
-			region.ForEach(pos => _map[pos.x, pos.y] = Instantiate(waterCell));
+			region.ForEach(pos =>
+			{
+				_map[pos.x, pos.y] = Instantiate(waterCell);
+				_map[pos.x, pos.y].isometric = isometric;
+			});
 		}
 
 		[Button]
@@ -78,12 +83,13 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 
 		public CellData[,] GenerateCellMap()
 		{
+			_map = new CellData[width,height];
+			_rooms = new List<List<Vector3Int>>();
+			
 			if (randomSeed)
 			{
 				seed = (int)DateTime.Now.Ticks;
 			}
-			_map = new CellData[width,height];
-			_rooms = new List<List<Vector3Int>>();
 			//Move into generate method and find closest room method
 			//Modify to avoid backtracking by adding cyclic paths
 			
@@ -172,11 +178,13 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 					{
 						//Create borders
 						var newTile = Instantiate(wallCell);
+						newTile.isometric = isometric;
 						_map[x,y] = newTile;
 					}
 					else
 					{
 						var newTile = Instantiate(groundCell);
+						newTile.isometric = isometric;
 						_map[x, y] = newTile;
 					}
 				}
@@ -195,11 +203,13 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 					{
 						//Create borders
 						var newTile = Instantiate(wallCell);
+						newTile.isometric = isometric;
 						_map[x,y] = newTile;
 					}
 					else
 					{
 						var newTile = Instantiate(prng.Next(0, 100) < _randomFillPercent ? wallCell : groundCell);
+						newTile.isometric = isometric;
 						_map[x, y] = newTile;
 					}
 				}
@@ -224,6 +234,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 							if (neighborGround < 4)
 							{
 								var newTile = Instantiate(wallCell);
+								newTile.isometric = isometric;
 								_map[x, y] = newTile;
 							}
 						}
@@ -236,6 +247,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 							if (neighborGround > 6)
 							{
 								var newTile = Instantiate(groundCell);
+								newTile.isometric = isometric;
 								_map[x, y] = newTile;
 							}
 						}
@@ -319,6 +331,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			foreach (var cell in roomPositions)
 			{
 				_map[cell.x, cell.y] = Instantiate(groundCell);
+				_map[cell.x, cell.y].isometric = isometric;
 			}
 			return roomPositions;
 		}
@@ -330,6 +343,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			var path = GridUtils.GetLine(start, end);
 			foreach (var cell in path) {
 				_map[cell.x, cell.y] = Instantiate(groundCell);
+				_map[cell.x, cell.y].isometric = isometric;
 				SurroundCell(cell, 1, groundCell);
 			}
 		}
@@ -432,6 +446,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 					foreach (Vector3Int tile in wallRegion) 
 					{
 						var newTile = Instantiate(groundCell);
+						newTile.isometric = isometric;
 						//targetMap.SetTile(tile, newTile);
 						_map[tile.x, tile.y] = newTile;
 						//newTile.gridPosition = tile;
@@ -447,6 +462,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 				if (roomRegion.Count < roomThresholdSize) {
 					foreach (Vector3Int tile in roomRegion) {
 						var newTile = Instantiate(wallCell);
+						newTile.isometric = isometric;
 						_map[tile.x, tile.y] = newTile;
 						CreateLake(roomRegion);
 					}
@@ -552,6 +568,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 						if (GridUtils.IsInMapRange(drawX, drawY, _map))
 						{
 							var newTile = Instantiate(cell);
+							newTile.isometric = isometric;
 							//targetMap.SetTile(new Vector3Int(drawX, drawY, 0), newTile);
 							_map[drawX, drawY] = newTile;
 							//newTile.gridPosition = new Vector3Int(drawX, drawY, 0);
@@ -622,28 +639,13 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			targetMap.CompressBounds();
 			targetMap.RefreshAllTiles();
 			
-			if (!isometric)
+			for (var i = 0; i < cellMap.GetLength(0); i++)
 			{
-				targetGrid.cellLayout = GridLayout.CellLayout.Rectangle;
-				targetGrid.cellSwizzle = GridLayout.CellSwizzle.XYZ;
-				for (var i = 0; i < cellMap.GetLength(0); i++)
+				for (var j = 0; j < cellMap.GetLength(1); j++)
 				{
-					for (var j = 0; j < cellMap.GetLength(1); j++)
-					{
-						targetMap.SetTile(new Vector3Int(i, j), _map[i,j]);
-					}
-				}
-			}
-			else
-			{
-				targetGrid.cellLayout = GridLayout.CellLayout.Isometric;
-				targetGrid.cellSwizzle = GridLayout.CellSwizzle.XYZ;
-				for (var i = 0; i < cellMap.GetLength(0); i++)
-				{
-					for (var j = 0; j < cellMap.GetLength(1); j++)
-					{
-						targetMap.SetTile(GridUtils.GetIsometricPos(new Vector3Int(i, j)), _map[i,j]);
-					}
+					//_map[i,j].gridPosition = new Vector3Int(i, j);
+					_map[i, j].isometric = isometric;
+					targetMap.SetTile(new Vector3Int(i, j), _map[i,j]);
 				}
 			}
 		}

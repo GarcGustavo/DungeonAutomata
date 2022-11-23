@@ -2,6 +2,7 @@ using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
 using DungeonAutomata._Project.Scripts.Controllers;
 using DungeonAutomata._Project.Scripts.Data;
+using DungeonAutomata._Project.Scripts.Utilities;
 using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts.GridComponents
@@ -13,7 +14,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private SpriteRenderer _spriteRenderer;
 		private MapManager _mapManager;
 		private EventManager _eventManager;
-		public Vector3Int CurrentTile { get; set; }
+		public Vector3Int CurrentPos { get; set; }
 		public ItemType ItemType { get; set; }
 		public Sprite Icon { get; set; }
 		public string UnitName { get; set; }
@@ -92,15 +93,15 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				    && cellMap[position.x, position.y].Occupant == null
 				    && cellMap[position.x, position.y].isWalkable)
 				{
-					var previousCell = cellMap[CurrentTile.x, CurrentTile.y];
+					var previousCell = cellMap[CurrentPos.x, CurrentPos.y];
 				
 					previousCell.Occupant = null;
 					previousCell.isWalkable = true;
 					currentCell.Occupant = this;
 					currentCell.isWalkable = false;
 					//need to refactor, used to be isEmpty
-					transform.position = position;
-					CurrentTile = position;
+					transform.position =  GridUtils.GetIsometricPos(position);
+					CurrentPos = position;
 				
 					_eventManager.InvokeCellUpdate(previousCell);
 					_eventManager.InvokeCellUpdate(currentCell);
@@ -108,7 +109,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				}
 				else
 				{
-					transform.position = CurrentTile;
+					transform.position = CurrentPos;
 				}
 			}
 		}

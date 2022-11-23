@@ -23,7 +23,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private CellData[,] _cellMap;
 
 		public string Description { get; set; }
-		public Vector3Int CurrentTile { get; set; }
+		public Vector3Int CurrentPos { get; set; }
 		private GridController2D _controller;
 		public string UnitName { get; set; }
 		public int MaxHP { get; set; }
@@ -55,7 +55,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			_mapManager = MapManager.Instance;
 			_eventManager.OnPlayerDamaged += Damage;
 			//_eventManager.OnPlayerAction += UseEnergy;
-			CurrentTile = new Vector3Int();
+			CurrentPos = new Vector3Int();
 			UnitName = playerData.name;
 		}
 
@@ -133,7 +133,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Move(Vector3Int position)
 		{
-			Debug.Log("Player moving to: " + position + " from: " + CurrentTile);
+			Debug.Log("Player moving to: " + position + " from: " + CurrentPos);
 			_controller.MoveUnit(position);
 		}
 		
@@ -146,12 +146,12 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			    && _cellMap[position.x, position.y].isWalkable)
 			{
 				_controller.SetPosition(position);
-				CurrentTile = position;
+				CurrentPos = position;
 			}
-			else
-			{
-				transform.position = CurrentTile;
-			}
+			//else
+			//{
+			//	_controller.SetPosition(CurrentPos);
+			//}
 		}
 
 		//Not efficient, rework later
@@ -192,26 +192,26 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				if (Input.GetKey(KeyCode.W) && !Input.GetKeyUp(KeyCode.W))
 				{
 					var direction = zAxisUp ? Vector3Int.forward : Vector3Int.up;
-					_manager.RegisterCommand(new MoveCommand(this, CurrentTile + direction));
+					_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
 					UseEnergy();
 					//Move(CurrentTile + direction);
 				}
 				else if (Input.GetKey(KeyCode.S) && !Input.GetKeyUp(KeyCode.S))
 				{
 					var direction = zAxisUp ? Vector3Int.back : Vector3Int.down;
-					_manager.RegisterCommand(new MoveCommand(this, CurrentTile + direction));
+					_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
 					UseEnergy();
 					//Move(CurrentTile + direction);
 				}
 				else if (Input.GetKey(KeyCode.A) && !Input.GetKeyUp(KeyCode.A))
 				{
-					_manager.RegisterCommand(new MoveCommand(this, CurrentTile + Vector3Int.left));
+					_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.left));
 					UseEnergy();
 					//Move(CurrentTile + Vector3Int.left);
 				}
 				else if (Input.GetKey(KeyCode.D) && !Input.GetKeyUp(KeyCode.D))
 				{
-					_manager.RegisterCommand(new MoveCommand(this, CurrentTile + Vector3Int.right));
+					_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.right));
 					UseEnergy();
 					//Move(CurrentTile + Vector3Int.right);
 				}

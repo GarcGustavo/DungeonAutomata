@@ -33,7 +33,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public int Thirst { get; set; }
 		public int AggroDistance { get; set; }
 		
-		public Vector3Int CurrentTile { get; set; }
+		public Vector3Int CurrentPos { get; set; }
 		private List<CellData> _visibleCells;
 		public Vector3Int CurrentTarget { get; set; }
 		private Vector3Int playerPos;
@@ -130,11 +130,11 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			    && _cellMap[position.x, position.y].isWalkable)
 			{
 				_controller.SetPosition(position);
-				CurrentTile = position;
+				CurrentPos = position;
 			}
 			else
 			{
-				transform.position = CurrentTile;
+				transform.position = CurrentPos;
 			}
 		}
 
@@ -142,16 +142,16 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			var cellTarget = _mapManager.GetPlayer();
 			var valueMap = _mapManager.GetPlayerMap();
-			var nextCell = GetLowestCostAdjacentCell(CurrentTile, ref valueMap);
+			var nextCell = GetLowestCostAdjacentCell(CurrentPos, ref valueMap);
 			if (cellTarget != null)
 			{
-				var losCells = GetLine(CurrentTile, cellTarget.CurrentTile);
-				if(GetAdjacentCells(CurrentTile, _cellMap).Contains(_cellMap[playerPos.x, playerPos.y]))
+				var losCells = GetLine(CurrentPos, cellTarget.CurrentPos);
+				if(GetAdjacentCells(CurrentPos, _cellMap).Contains(_cellMap[playerPos.x, playerPos.y]))
 					return playerPos;
 				foreach (var cell in losCells)
 				{
 					if (_cellMap[cell.x, cell.y].cellType == CellTypes.Wall 
-					    && GetCellDistance(playerPos, CurrentTile) >= AggroDistance)
+					    && GetCellDistance(playerPos, CurrentPos) >= AggroDistance)
 					{
 						return Wander();
 					}
@@ -173,7 +173,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Die()
 		{
-			var cell = _cellMap[CurrentTile.x, CurrentTile.y];
+			var cell = _cellMap[CurrentPos.x, CurrentPos.y];
 			cell.Occupant = null;
 			cell.isWalkable = true;
 			_eventManager.InvokeCellUpdate(cell);
@@ -212,17 +212,17 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					direction = Vector3Int.right;
 					break;
 			}
-			return CurrentTile + direction;
+			return CurrentPos + direction;
 		}
 		public void Chase(IUnit target)
 		{
-			var targetPos = target.CurrentTile;
+			var targetPos = target.CurrentPos;
 			_controller.MoveTowards(targetPos);
 		}
 		
 		public void Flee(IUnit target)
 		{
-			_controller.MoveAwayFrom(target.CurrentTile);
+			_controller.MoveAwayFrom(target.CurrentPos);
 		}
 
 		public void Rest()

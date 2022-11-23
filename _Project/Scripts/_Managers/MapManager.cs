@@ -118,25 +118,6 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			SpawnItems();
 		}
 
-		private void SetExit()
-		{
-			var rooms = mapGenerator.GetRooms();
-			_exitRoom = rooms[Random.Range(0, rooms.Count)];
-			var exitCell = _exitRoom[Random.Range(0, _exitRoom.Count)];
-			while (_gridMap[exitCell.x, exitCell.y].Occupant != null 
-			       && !_gridMap[exitCell.x, exitCell.y].isWalkable)
-			{ 
-				exitCell = _exitRoom[Random.Range(0, _exitRoom.Count)];
-			}
-			_gridMap[exitCell.x, exitCell.y].cellType = CellTypes.Exit;
-			_tileMap.SetColor(exitCell, Color.magenta);
-			_tileMap.SetTile(exitCell, _gridMap[exitCell.x, exitCell.y]);
-			_tileMap.SetTile(
-				grid.cellLayout == GridLayout.CellLayout.Isometric
-					? GridUtils.GetIsometricPos(exitCell)
-					: exitCell, _gridMap[exitCell.x, exitCell.y]);
-		}
-
 		public void ResetMap()
 		{
 			_tileMap.ClearAllTiles();
@@ -159,7 +140,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private void VisualizePlayerDijsktraMap()
 		{
 			ClearDijkstraMap();
-			var dijkstraMap = GridUtils.GetDijkstraMap(_player.CurrentTile, _gridMap);
+			var dijkstraMap = GridUtils.GetDijkstraMap(_player.CurrentPos, _gridMap);
 			for (int i = 0; i < dijkstraMap.GetLength(0); i++)
 			{
 				for (int j = 0; j < dijkstraMap.GetLength(1); j++)
@@ -183,7 +164,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			var enemyPositions = new List<Vector3Int>();
 			foreach (var enemy in _enemies)
 			{
-				enemyPositions.Add(enemy.CurrentTile);
+				enemyPositions.Add(enemy.CurrentPos);
 			}
 			var dijkstraMap = GridUtils.GetDijkstraMap(enemyPositions, _gridMap);
 			for (int i = 0; i < dijkstraMap.GetLength(0); i++)
@@ -208,27 +189,30 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public void HighLightCell(Vector3Int cell)
 		{
 			if (_tileMap == null) return;
-			if (_tileMap.HasTile(grid.WorldToCell(cell)))
+			var cellPos = grid.WorldToCell(cell);
+			var cellCartPos = IsIsometric() ? GridUtils.GetCartesianPos(cellPos) : cellPos;
+			if (_tileMap.HasTile(cellPos))
 			{
-				var cellData = _gridMap[grid.WorldToCell(cell).x, grid.WorldToCell(cell).y];
+				var cellData = _gridMap[cellCartPos.x, cellCartPos.y];
 				if (cellData == null) return;
 				highLightMap.ClearAllTiles();
-				highLightMap.SetTile(
-					grid.cellLayout == GridLayout.CellLayout.Isometric
-						? GridUtils.GetIsometricPos(grid.WorldToCell(cell))
-						: grid.WorldToCell(cell), highLightTile);
+				highLightMap.SetTile(cellPos, highLightTile);
+				Debug.Log("Highlighting cart cell: " + cellCartPos + ", iso: " + cellPos);
 
-				_visibleCells = GridUtils.GetLine(_player.CurrentTile, grid.WorldToCell(cell));
+				_visibleCells = GridUtils.GetLine(_player.CurrentPos, cellCartPos);
 				if (cellData.Occupant != null)
 				{
 					_uiManager.SetUnitInfo(cellData.Occupant);
-					//Used for debugging
-					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]");
+					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]"
+					+ "\n cart[" + cellCartPos + "] " 
+					+ "\n iso[" + cellPos + "]");
 				}
 				else
 				{
 					_uiManager.SetUnitInfo(null);
-					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]");
+					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]"
+					                        + "\n cart[" + cellCartPos + "] " 
+					                        + "\n iso[" + cellPos + "]");
 				}
 			}
 			//foreach (var visibleCell in _visibleCells)
@@ -292,6 +276,24 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		#endregion
 
 		#region SPAWNERS
+
+		private void SetExit()
+		{
+			var rooms = mapGenerator.GetRooms();
+			_exitRoom = rooms[Random.Range(0, rooms.Count)];
+			var exitCell = _exitRoom[Random.Range(0, _exitRoom.Count)];
+			var cellPos = IsIsometric()
+				? GridUtils.GetIsometricPos(exitCell)
+				: exitCell;
+			while (_gridMap[exitCell.x, exitCell.y].Occupant != null 
+			       && !_gridMap[exitCell.x, exitCell.y].isWalkable)
+			{ 
+				exitCell = _exitRoom[Random.Range(0, _exitRoom.Count)];
+			}
+			_gridMap[exitCell.x, exitCell.y].cellType = CellTypes.Exit;
+			_tileMap.SetColor(cellPos, Color.magenta);
+			_tileMap.SetTile(cellPos, _gridMap[exitCell.x, exitCell.y]);
+		}
 		
 		private void SpawnPlayer()
 		{
@@ -310,10 +312,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 					break;
 			}
 			
-			var prefab = Instantiate(playerPrefab, _playerSpawnPoint, Quaternion.identity);
+			var tilePos = IsIsometric() ? GridUtils.GetIsometricPos(_playerSpawnPoint) : _playerSpawnPoint;
+			var prefab = Instantiate(playerPrefab, tilePos, Quaternion.identity);
 			_player = prefab.GetComponent<PlayerUnit>();
 			_player.InitializeUnit();
-			_player.CurrentTile = _gridMap[_playerSpawnPoint.x, _playerSpawnPoint.y].gridPosition;
+			_player.CurrentPos = _playerSpawnPoint;
 			_gameManager.SetPlayer(_player);
 			_gameManager.ResetCamera(_player.transform);
 			_gridMap[_playerSpawnPoint.x, _playerSpawnPoint.y].Occupant = _player;
@@ -331,9 +334,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			{
 				if (room != _startingRoom)
 				{
-					_enemySpawnPoints.Add(GridUtils.GetRandomPosition(room));
-					_enemySpawnPoints.Add(GridUtils.GetRandomPosition(room));
-					_enemySpawnPoints.Add(GridUtils.GetRandomPosition(room));
+					for( int i = 0; i < 3; i++)
+					{
+						var pos = GridUtils.GetRandomPosition(room);
+						_enemySpawnPoints.Add(pos);
+					}
 				}
 			}
 			//Spawn enemies at available tiles
@@ -341,12 +346,13 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			{
 				var data = enemyData[Random.Range(0, enemyData.Length)];
 				var gridPos = spawnPoint;
+				var tilePos = IsIsometric() ? GridUtils.GetIsometricPos(gridPos) : gridPos;
 				if (_gridMap[gridPos.x, gridPos.y].Occupant == null)
 				{
-					var prefab = Instantiate(enemyPrefab, gridPos, Quaternion.identity);
+					var prefab = Instantiate(enemyPrefab, tilePos, Quaternion.identity);
 					var enemy = prefab.GetComponent<EnemyUnit>();
 					enemy.InitializeUnit(data);
-					enemy.CurrentTile = gridPos;
+					enemy.CurrentPos = gridPos;
 					_enemies.Add(enemy);
 					_unitsToMove.Add(enemy);
 					_gridMap[gridPos.x, gridPos.y].Occupant = enemy;
@@ -380,13 +386,14 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			{
 				//Debug.Log("Spawning item at: " + spawnPoint);
 				var gridPos = spawnPoint;
-				var prefab = Instantiate(itemPrefab, gridPos, Quaternion.identity);
+				var tilePos = IsIsometric() ? GridUtils.GetIsometricPos(gridPos) : gridPos;
+				var prefab = Instantiate(itemPrefab, tilePos, Quaternion.identity);
 				var item = prefab.GetComponent<ItemUnit>();
 				
 				//Eventually move logic to a level director or something
 				item.InitializeItem(Random.Range(0, 100) < 50 ? foodData : healthData, item);
 
-				item.CurrentTile = gridPos;
+				item.CurrentPos = gridPos;
 				_gridMap[gridPos.x, gridPos.y].Occupant = item;
 				_gridMap[gridPos.x, gridPos.y].isWalkable = false;
 				//var tile = tileMap.GetTile(gridPos) as CellData;
@@ -398,6 +405,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		#endregion
 
 		#region GETS
+
+		public bool IsIsometric()
+		{
+			return grid.cellLayout == GridLayout.CellLayout.Isometric;
+		}
 		
 		public CellData[,] GetCellMap()
 		{
@@ -416,7 +428,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		public Vector3Int GetPlayerPosition()
 		{
-			return _player.CurrentTile;
+			return _player.CurrentPos;
 		}
 		
 		public void UpdateCellMap(CellData[,] map)
@@ -427,7 +439,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		
 		public void UpdateCell(CellData cell)
 		{
-			_gridMap[cell.gridPosition.x, cell.gridPosition.y] = cell;
+			var gridPos = cell.gridPosition;
+			_gridMap[gridPos.x, gridPos.y] = cell;
 			//mapGenerator.UpdateCell(cell);
 		}
 
@@ -437,7 +450,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		//TODO: Tie map updates to appropriate events
 		private void UpdatePlayerMap()
 		{
-			_playerMap = GridUtils.GetDijkstraMap(_player.CurrentTile, _gridMap);
+			_playerMap = GridUtils.GetDijkstraMap(_player.CurrentPos, _gridMap);
 		}
 		
 		private void UpdateEnemyMap(List<Vector3Int> enemyPositions)

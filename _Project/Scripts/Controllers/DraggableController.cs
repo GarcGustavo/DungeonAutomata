@@ -44,7 +44,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		void OnMouseUp()
 		{
 			_dragging = false;
-			_unit.SetPosition(Vector3Int.RoundToInt(_rayPoint + _startDist));
+			_unit.SetPosition(Vector3Int.FloorToInt(_rayPoint + _startDist));
 		}
  
 		void Update()

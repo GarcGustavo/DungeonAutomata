@@ -1,5 +1,6 @@
 using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
+using DungeonAutomata._Project.Scripts.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -17,12 +18,13 @@ namespace DungeonAutomata._Project.Scripts.Data
 		public CellTypes cellType;
 		[FormerlySerializedAs("isEmpty")] public bool isWalkable;
 		public IUnit Occupant;
+		public bool isometric = false;
 
 		public override void GetTileData(Vector3Int position, ITilemap tilemap, ref TileData tileData)
 		{
 			//Used to update tilemap data with Cell object data
 			tileData.sprite = cellSprite;
-			gridPosition = position;
+			gridPosition = isometric ? GridUtils.GetCartesianPos(position): position;
 		}
 		
 	}

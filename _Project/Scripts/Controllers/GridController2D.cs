@@ -17,7 +17,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 	public class GridController2D : MonoBehaviour
 	{
 		[SerializeField] private float moveCD = .2f;
-		private Tilemap tilemap;
+		//private Tilemap tilemap;
 		private CellData[,] cellMap;
 
 		//Using feedbacks from MoreMountains for movement effects
@@ -25,6 +25,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		private GameManager _gameManager;
 		private EventManager _eventManager;
 		private MapManager _mapManager;
+		private Grid _grid;
 
 		private Tween _tween;
 		private Vector3Int _currentPosition;
@@ -50,13 +51,14 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		public void InitializeGrid()
 		{
-			tilemap = _mapManager.GetTileMap();
+			//tilemap = _mapManager.GetTileMap();
 			cellMap = _mapManager.GetCellMap();
+			_grid = _mapManager.GetTileMap().layoutGrid;
 		}
 
 		public void SetPosition(Vector3Int position)
 		{
-			var previousCell = cellMap[_unit.CurrentTile.x, _unit.CurrentTile.y];
+			var previousCell = cellMap[_unit.CurrentPos.x, _unit.CurrentPos.y];
 			if (previousCell != null)
 			{
 				previousCell.Occupant = null;
@@ -64,11 +66,18 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			}
 			
 			var currentCell = cellMap[position.x, position.y];
-			currentCell.Occupant = _unit;
-			currentCell.isWalkable = false;
-			
+			if (currentCell != null)
+			{
+				currentCell.Occupant = _unit;
+				currentCell.isWalkable = false;
+			}
+
 			_currentPosition = position;
-			transform.position = position;
+			var gridPos = _mapManager.IsIsometric() ? GetIsometricPos(position) : position;
+			transform.position =  gridPos;
+			//transform.position =  _grid.CellToWorld(gridPos);
+			//StartCoroutine(MoveToPosition(transform, gridPos, moveCD));
+			
 			_eventManager.InvokeCellUpdate(previousCell);
 			_eventManager.InvokeCellUpdate(currentCell);
 			//_mapManager.UpdateCellMap(cellMap);
@@ -76,7 +85,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		public void MoveUnit(Vector3Int pos)
 		{
-			_currentPosition = _unit.CurrentTile;
+			_currentPosition = _unit.CurrentPos;
 			cellMap = _mapManager.GetCellMap();
 			//if (tilemap.HasTile(pos))
 			if (cellMap[pos.x, pos.y] != null)
@@ -90,8 +99,9 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				previousCell.isWalkable = true;
 				previousCell.Occupant = null;
 				_currentPosition = pos;
-				_unit.CurrentTile = _currentPosition;
-				StartCoroutine(MoveToPosition(transform, pos, moveCD));
+				_unit.CurrentPos = pos;
+				var gridPos = _mapManager.IsIsometric() ? GetIsometricPos(pos) : pos;
+				StartCoroutine(MoveToPosition(transform, gridPos, moveCD));
 			}
 		}
 
@@ -114,7 +124,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 					    || cell.Occupant.GetType() == typeof(EnemyUnit))
 					{
 						var positions = new List<Vector3Int>();
-						positions.Add(cell.Occupant.CurrentTile);
+						positions.Add(cell.Occupant.CurrentPos);
 						//Debug.Log("Attacking: " + cell.gridPosition);
 						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
 							_currentPosition, 
@@ -142,7 +152,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 					if (cell.Occupant.GetType() == typeof(EnemyUnit))
 					{
 						var positions = new List<Vector3Int>();
-						positions.Add(cell.Occupant.CurrentTile);
+						positions.Add(cell.Occupant.CurrentPos);
 						Debug.Log("Attacking: " + cell.gridPosition);
 						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
 							_currentPosition, 

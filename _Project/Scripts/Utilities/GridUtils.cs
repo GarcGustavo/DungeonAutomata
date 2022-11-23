@@ -220,16 +220,18 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		//Converts from cartesian to isometric cell position
 		public static Vector3Int GetIsometricPos(Vector3Int pos)
 		{
-			var isoX = pos.x + pos.y;
-			var isoY = (pos.y - pos.x) / 2;
-			return new Vector3Int(isoX, isoY, 0);
+			var isoX = pos.x - pos.y;
+			var isoY = (pos.y + pos.x) / 2;
+			return new Vector3Int(isoX, isoY);
 		}
 		//Converts from isometric to cartesian cell position
 		public static Vector3Int GetCartesianPos(Vector3Int pos)
 		{
-			var carX = (pos.x - pos.y) / 1.5f;
-			var carY = pos.x/3f + pos.y/1.5f;
-			return new Vector3Int((int) carX, (int) carY, 0);
+			//var carX = (pos.x - pos.y) / 1.5f;
+			//var carY = -pos.x/3f + pos.y/1.5f;
+			var carX =  ( 2 * pos.y + pos.x ) / 2;
+			var carY = ( 2 * pos.y - pos.x ) / 2;
+			return new Vector3Int(carX, carY);
 		}
 
 		public static bool IsInMapRange<T>(Vector3Int position, T[,] map) 
