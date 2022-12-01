@@ -24,7 +24,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		[SerializeField] private RectTransform inventoryPanel;
 		[SerializeField] private ItemContainerUI inventoryItem;
 		private EventManager _eventManager;
-		private GameManager _gameManager;
+		private TopDownManager _turnManager;
 		private InventoryManager _inventoryManager;
 		private PlayerUnit _player;
 		private int _turnCount;
@@ -44,7 +44,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private void Start()
 		{
 			_eventManager = EventManager.Instance;
-			_gameManager = GameManager.Instance;
+			_turnManager = TopDownManager.Instance;
 			_inventoryManager = InventoryManager.Instance;
 			_eventManager.OnUpdateInventory += UpdateInventory;
 			_eventManager.OnUpdateHUD += UpdatePlayerInfo;
@@ -98,7 +98,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void UpdatePlayerInfo()
 		{
-			_player = _gameManager.GetPlayer();
+			_player = _turnManager.GetPlayer();
 			if (_player != null)
 			{
 				_player.UpdateDescription();

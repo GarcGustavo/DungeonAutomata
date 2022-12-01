@@ -10,33 +10,34 @@ using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
 
 namespace DungeonAutomata._Project.Scripts._Managers
 {
-	public class GameManager : MonoBehaviour
+
+	public enum GameState
 	{
-		public static GameManager Instance { get; private set; }
+		PlayerTurn,
+		EnemyTurn,
+		Lose,
+		Win,
+		Menu
+	}
+	public class TopDownManager : MonoBehaviour
+	{
+		public static TopDownManager Instance { get; private set; }
 		
 		//[SerializeField] private GameObject _enemyPrefab;
 		//[SerializeField] private Item[] _itemPrefabs;
 		//[SerializeField] private List<Vector3Int> _enemySpawnPoints;
 		//[SerializeField] private List<Vector3Int> _itemSpawnPoints;
 		[SerializeField] private CinemachineVirtualCamera _camera;
+		[SerializeField] private bool _populateOnLoad;
+		[SerializeField] private PlayerUnit _player;
 		private EventManager _eventManager;
 		private MapManager _mapManager;
 		private UIManager _uiManager;
 		private List<ItemUnit> _inventory;
-		private PlayerUnit _player;
 		private GameState _previousState;
 		private GameState _state;
 		private int _turnCount = 0;
 		private List<ICommand> _actionList;
-
-		private enum GameState
-		{
-			PlayerTurn,
-			EnemyTurn,
-			Lose,
-			Win,
-			Menu
-		}
 
 		// Unity event functions
 		//-------------------------------------------------------------------
@@ -88,17 +89,16 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			Debug.Log("Game Started");
 			_eventManager.InvokeStartGame();
 			_mapManager.InitializeMap();
-			_player = GetPlayer();
+			if (_populateOnLoad)
+			{
+				_mapManager.PopulateGridMap();
+				_player = GetPlayer();
+			}
 			_eventManager.InvokeUpdateHUD();
 			//UpdateGameState(_state);
 		}
 		private void Update()
 		{
-			if (_player != null && _state == GameState.PlayerTurn)
-			{
-				_player.GetPlayerInput();
-			}
-			
 			//Highlight tile under mouse
 			var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 			_mapManager.HighLightCell(Vector3Int.RoundToInt(mouseWorldPos));
@@ -235,6 +235,11 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			// Play around with order execution via unit stats later
 			_actionList.Add(command);
+		}
+
+		public GameState GetState()
+		{
+			return _state;
 		}
 	}
 }

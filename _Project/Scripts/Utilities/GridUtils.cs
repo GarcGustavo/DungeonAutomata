@@ -217,11 +217,21 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			}
 			return cellList;
 		}
+		/*
+			isoX = carX + carY;
+			isoY = carY - carX / 2.0;
+
+			carX = (isoX - isoY) / 1.5;
+			carY = isoX / 3.0 + isoY / 1.5;
+		 */
+		
 		//Converts from cartesian to isometric cell position
 		public static Vector3Int GetIsometricPos(Vector3Int pos)
 		{
-			var isoX = pos.x - pos.y;
-			var isoY = (pos.y + pos.x) / 2;
+			//var isoX = pos.x - pos.y;
+			//var isoY = (pos.y + pos.x) / 2;
+			var isoX = pos.x + pos.y;
+			var isoY = (pos.y - pos.x) / 2;
 			return new Vector3Int(isoX, isoY);
 		}
 		//Converts from isometric to cartesian cell position
@@ -229,8 +239,10 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		{
 			//var carX = (pos.x - pos.y) / 1.5f;
 			//var carY = -pos.x/3f + pos.y/1.5f;
-			var carX =  ( 2 * pos.y + pos.x ) / 2;
-			var carY = ( 2 * pos.y - pos.x ) / 2;
+			//var carX =  ( 2 * pos.y + pos.x ) / 2;
+			//var carY = ( 2 * pos.y - pos.x ) / 2;
+			var carX =  pos.x/2 - pos.y;
+			var carY = pos.y + pos.x/2 ;
 			return new Vector3Int(carX, carY);
 		}
 

@@ -13,22 +13,16 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		{
 			
 		}
-		
-		private void Update()
-		{
-			Move();
-		}
 
-		private void Move()
+		public void MoveUnit(Vector3 input)
 		{
-			var input = new Vector3(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"), 0);
 			var direction = transform.TransformDirection(input);
 			var velocity = direction * _speed;
 			var movement = velocity * Time.deltaTime;
 			transform.position += movement;
 		}
 
-		private void Rotate()
+		public void Rotate()
 		{
 			var rotation = Input.GetAxis("Horizontal") * _rotationSpeed * Time.deltaTime;
 			transform.Rotate(0, rotation, 0);

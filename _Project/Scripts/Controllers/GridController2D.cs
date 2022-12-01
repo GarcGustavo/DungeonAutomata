@@ -22,7 +22,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		//Using feedbacks from MoreMountains for movement effects
 		[SerializeField] private MMFeedbacks feedbacks;
-		private GameManager _gameManager;
+		private TopDownManager _turnManager;
 		private EventManager _eventManager;
 		private MapManager _mapManager;
 		private Grid _grid;
@@ -41,7 +41,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		private void Awake()
 		{
-			_gameManager = GameManager.Instance;
+			_turnManager = TopDownManager.Instance;
 			_eventManager = EventManager.Instance;
 			_mapManager = MapManager.Instance;
 			CanMove = true;
@@ -72,10 +72,13 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				currentCell.isWalkable = false;
 			}
 
-			_currentPosition = position;
-			var gridPos = _mapManager.IsIsometric() ? GetIsometricPos(position) : position;
-			transform.position =  gridPos;
-			//transform.position =  _grid.CellToWorld(gridPos);
+			var cellPos = _grid.WorldToCell( GetIsometricPos(position));
+			transform.position = cellPos;
+			_currentPosition = cellPos;
+			//transform.position = position;
+
+			//var gridPos = _mapManager.IsIsometric() ? GetIsometricPos(position) : position;
+			//transform.position =  position;
 			//StartCoroutine(MoveToPosition(transform, gridPos, moveCD));
 			
 			_eventManager.InvokeCellUpdate(previousCell);
@@ -100,8 +103,9 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				previousCell.Occupant = null;
 				_currentPosition = pos;
 				_unit.CurrentPos = pos;
-				var gridPos = _mapManager.IsIsometric() ? GetIsometricPos(pos) : pos;
-				StartCoroutine(MoveToPosition(transform, gridPos, moveCD));
+				//var gridPos = _mapManager.IsIsometric() ? GetIsometricPos(pos) : pos;
+				//_grid.CellToWorld(gridPos);
+				StartCoroutine(MoveToPosition(transform, _grid.CellToWorld(pos), moveCD));
 			}
 		}
 

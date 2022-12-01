@@ -8,7 +8,7 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 	{
 		public int MaxHP { get; set; }
 		public int CurrentHP { get; set; }
-		public void Move(Vector3Int position);
+		public void MoveTurnBased(Vector3Int position);
 		public void Attack(IUnit source, IUnit target);
 		public void Attack(Vector3Int target, AttackData data);
 	}

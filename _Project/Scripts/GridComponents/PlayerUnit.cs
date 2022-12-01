@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using DungeonAutomata._Project.Scripts._Interfaces;
@@ -13,18 +14,27 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 {
 	[RequireComponent(typeof(GridController2D))]
 	[RequireComponent(typeof(DraggableController))]
+	[RequireComponent(typeof(TopDownController))]
 	public class PlayerUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
+		public enum ControlType
+		{
+			RealTime,
+			TurnBased
+		}
+		[SerializeField] private ControlType _controlType = ControlType.TurnBased;
 		[SerializeField] private PlayerData playerData;
 		private InventoryManager _inventory;
-		private GameManager _manager;
+		private TopDownManager _manager;
 		private EventManager _eventManager;
 		private MapManager _mapManager;
 		private CellData[,] _cellMap;
 
 		public string Description { get; set; }
 		public Vector3Int CurrentPos { get; set; }
-		private GridController2D _controller;
+		public bool isGridUnit;
+		private GridController2D _gridController;
+		private TopDownController _topDownController;
 		public string UnitName { get; set; }
 		public int MaxHP { get; set; }
 		public int CurrentHP { get; set; }
@@ -46,10 +56,10 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		private void Awake()
 		{
-			_controller = GetComponent<GridController2D>();
+			_gridController = GetComponent<GridController2D>();
 			var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
 			spriteRenderer.sprite = playerData.sprite;
-			_manager = GameManager.Instance;
+			_manager = TopDownManager.Instance;
 			_eventManager = EventManager.Instance;
 			_inventory = InventoryManager.Instance;
 			_mapManager = MapManager.Instance;
@@ -57,6 +67,11 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			//_eventManager.OnPlayerAction += UseEnergy;
 			CurrentPos = new Vector3Int();
 			UnitName = playerData.name;
+		}
+
+		private void Update()
+		{
+			GetPlayerInput();
 		}
 
 		public void InitializeUnit()
@@ -79,7 +94,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			Thirst = 0;
 			_cellMap = _mapManager.GetCellMap();
 			
-			_controller.InitializeGrid();
+			_gridController.InitializeGrid();
 			UpdateDescription();
 			SetMoveState(true);
 		}
@@ -131,10 +146,15 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			//_controller.CanMove = isMoving;
 		}
 
-		public void Move(Vector3Int position)
+		public void MoveTurnBased(Vector3Int position)
 		{
 			Debug.Log("Player moving to: " + position + " from: " + CurrentPos);
-			_controller.MoveUnit(position);
+			_gridController.MoveUnit(position);
+		}
+
+		private void MoveTopDown(Vector3 input)
+		{
+			_topDownController.MoveUnit(input);
 		}
 		
 		public void SetPosition(Vector3Int position)
@@ -145,13 +165,13 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			    && _cellMap[position.x, position.y].Occupant == null
 			    && _cellMap[position.x, position.y].isWalkable)
 			{
-				_controller.SetPosition(position);
+				_gridController.SetPosition(position);
 				CurrentPos = position;
 			}
-			//else
-			//{
-			//	_controller.SetPosition(CurrentPos);
-			//}
+			else
+			{
+				_gridController.SetPosition(CurrentPos);
+			}
 		}
 
 		//Not efficient, rework later
@@ -189,41 +209,49 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			if (_inputEnabled)
 			{
-				if (Input.GetKey(KeyCode.W) && !Input.GetKeyUp(KeyCode.W))
+				if (_controlType == ControlType.TurnBased)
 				{
-					var direction = zAxisUp ? Vector3Int.forward : Vector3Int.up;
-					_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
-					UseEnergy();
-					//Move(CurrentTile + direction);
+					if (Input.GetKey(KeyCode.W) && !Input.GetKeyUp(KeyCode.W))
+					{
+						var direction = zAxisUp ? Vector3Int.forward : Vector3Int.up;
+						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
+						UseEnergy();
+						//Move(CurrentTile + direction);
+					}
+					else if (Input.GetKey(KeyCode.S) && !Input.GetKeyUp(KeyCode.S))
+					{
+						var direction = zAxisUp ? Vector3Int.back : Vector3Int.down;
+						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
+						UseEnergy();
+						//Move(CurrentTile + direction);
+					}
+					else if (Input.GetKey(KeyCode.A) && !Input.GetKeyUp(KeyCode.A))
+					{
+						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.left));
+						UseEnergy();
+						//Move(CurrentTile + Vector3Int.left);
+					}
+					else if (Input.GetKey(KeyCode.D) && !Input.GetKeyUp(KeyCode.D))
+					{
+						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.right));
+						UseEnergy();
+						//Move(CurrentTile + Vector3Int.right);
+					}
+					else if (Input.GetKeyDown(KeyCode.Tab))
+					{
+						_eventManager.InvokeMenu();
+					}
+					else if (Input.GetKey(KeyCode.Space) && !Input.GetKeyUp(KeyCode.Space))
+					{
+						//Essentially a fast forward button
+						//_eventManager.InvokePlayerAction();
+						UseEnergy();
+					}
 				}
-				else if (Input.GetKey(KeyCode.S) && !Input.GetKeyUp(KeyCode.S))
+				else if (_controlType == ControlType.RealTime)
 				{
-					var direction = zAxisUp ? Vector3Int.back : Vector3Int.down;
-					_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
-					UseEnergy();
-					//Move(CurrentTile + direction);
-				}
-				else if (Input.GetKey(KeyCode.A) && !Input.GetKeyUp(KeyCode.A))
-				{
-					_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.left));
-					UseEnergy();
-					//Move(CurrentTile + Vector3Int.left);
-				}
-				else if (Input.GetKey(KeyCode.D) && !Input.GetKeyUp(KeyCode.D))
-				{
-					_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.right));
-					UseEnergy();
-					//Move(CurrentTile + Vector3Int.right);
-				}
-				else if (Input.GetKeyDown(KeyCode.Tab))
-				{
-					_eventManager.InvokeMenu();
-				}
-				else if (Input.GetKey(KeyCode.Space) && !Input.GetKeyUp(KeyCode.Space))
-				{
-					//Essentially a fast forward button
-					//_eventManager.InvokePlayerAction();
-					UseEnergy();
+					var input = new Vector3(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"), 0);
+					MoveTopDown(input);
 				}
 			}
 		}

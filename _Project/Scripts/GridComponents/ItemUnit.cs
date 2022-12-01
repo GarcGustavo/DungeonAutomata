@@ -14,6 +14,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private SpriteRenderer _spriteRenderer;
 		private MapManager _mapManager;
 		private EventManager _eventManager;
+		private Grid _grid;
 		public Vector3Int CurrentPos { get; set; }
 		public ItemType ItemType { get; set; }
 		public Sprite Icon { get; set; }
@@ -43,6 +44,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			UnitName = itemData.itemName;
 			Description = itemData.description;
 			ItemType = itemData.itemType;
+			_grid = _mapManager.GetTileMap().layoutGrid;
 		}
 		
 		public void Use(Vector3Int target)
@@ -78,7 +80,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			throw new System.NotImplementedException();
 		}
 
-		public void Move(Vector3Int position)
+		public void MoveTurnBased(Vector3Int position)
 		{
 			throw new System.NotImplementedException();
 		}
@@ -100,7 +102,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					currentCell.Occupant = this;
 					currentCell.isWalkable = false;
 					//need to refactor, used to be isEmpty
-					transform.position =  GridUtils.GetIsometricPos(position);
+					//transform.position =  position;
+					transform.position =  _grid.GetCellCenterWorld(GridUtils.GetIsometricPos(position));
 					CurrentPos = position;
 				
 					_eventManager.InvokeCellUpdate(previousCell);
@@ -109,7 +112,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				}
 				else
 				{
-					transform.position = CurrentPos;
+					//transform.position = GridUtils.GetIsometricPos(CurrentPos);
+					transform.position = _grid.GetCellCenterWorld(CurrentPos);
 				}
 			}
 		}

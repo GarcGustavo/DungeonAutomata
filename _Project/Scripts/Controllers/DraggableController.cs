@@ -34,11 +34,13 @@ namespace DungeonAutomata._Project.Scripts.Controllers
  
 		void OnMouseDown()
 		{
-			_distance = Vector3.Distance(transform.position, Camera.main.transform.position);
+			var cam = Camera.main;
+			var pos = transform.position;
+			_distance = Vector3.Distance(pos, cam.transform.position);
 			_dragging = true;
-			Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+			Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 			Vector3 rayPoint = ray.GetPoint(_distance);
-			_startDist = transform.position - rayPoint;
+			_startDist = pos - rayPoint;
 		}
  
 		void OnMouseUp()

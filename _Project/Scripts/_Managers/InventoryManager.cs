@@ -9,7 +9,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 	public class InventoryManager : MonoBehaviour
 	{
 		public static InventoryManager Instance { get; private set; }
-		private GameManager _gameManager;
+		private TopDownManager _turnManager;
 		private EventManager _eventManager;
 		public List<IItem> Items;
 		public List<IItem> Equipment;
@@ -31,7 +31,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void Start()
 		{
-			_gameManager = GameManager.Instance;
+			_turnManager = TopDownManager.Instance;
 			_eventManager = EventManager.Instance;
 			_eventManager.OnPickup += AddItem;
 		}

@@ -22,7 +22,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 	{
 		[SerializeField] private EnemyData _enemyData;
 		
-		private GameManager _gameManager;
+		private TopDownManager _turnManager;
 		private MapManager _mapManager;
 		private EventManager _eventManager;
 		public string UnitName { get; set; }
@@ -46,7 +46,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		private void Awake()
 		{
-			_gameManager = GameManager.Instance;
+			_turnManager = TopDownManager.Instance;
 			_mapManager = MapManager.Instance;
 			_eventManager = EventManager.Instance;
 			_controller = GetComponent<GridController2D>();
@@ -105,7 +105,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			CurrentTarget = LookForPlayer();
 			if (CurrentTarget != null)
 			{
-				_gameManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
+				_turnManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
 				//Move(CurrentTarget);
 			}
 			_eventManager.InvokeUnitAction(this);
@@ -134,7 +134,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			}
 			else
 			{
-				transform.position = CurrentPos;
+				_controller.SetPosition(CurrentPos);
 			}
 		}
 
@@ -161,7 +161,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			return nextCell;
 		}
 
-		public void Move(Vector3Int position)
+		public void MoveTurnBased(Vector3Int position)
 		{
 			_controller.MoveUnit(position);
 		}

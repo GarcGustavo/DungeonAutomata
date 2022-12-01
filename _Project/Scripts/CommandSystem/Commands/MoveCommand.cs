@@ -22,7 +22,7 @@ namespace DungeonAutomata._Project.Scripts.CommandSystem.Commands
 		{
 			//possibly replace with generic logic and simply pass character/attack data into each concrete command
 			//_combatUnit.ExecuteAttack();
-			_combatUnit.Move(_target);
+			_combatUnit.MoveTurnBased(_target);
 		}
 	}
 }
