@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
 using DungeonAutomata._Project.Scripts.CommandSystem;
@@ -30,6 +31,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private MapManager _mapManager;
 		private CellData[,] _cellMap;
 
+		public StatsData UnitStats { get; set; }
 		public string Description { get; set; }
 		public Vector3Int CurrentPos { get; set; }
 		public bool isGridUnit;

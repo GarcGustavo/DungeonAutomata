@@ -26,6 +26,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		private MapManager _mapManager;
 		private EventManager _eventManager;
 		public string UnitName { get; set; }
+		public StatsData UnitStats { get; set; }
 		public string Description { get; set; }
 		public int MaxHP { get; set; }
 		public int CurrentHP { get; set; }

@@ -1,5 +1,7 @@
+using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts.Data;
 using DungeonAutomata._Project.Scripts.GridComponents;
+using static DungeonAutomata._Project.Scripts._Common.CommonTypes;
 using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts._Interfaces
@@ -7,6 +9,7 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 	public interface IUnit
 	{
 		public string UnitName { get; set; }
+		public StatsData UnitStats { get; set; }
 		public string Description { get; set; }
 		public Vector3Int CurrentPos { get; set; }
 		public void InitializeUnit();

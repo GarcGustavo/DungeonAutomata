@@ -1,3 +1,4 @@
+using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
 using DungeonAutomata._Project.Scripts.Controllers;
@@ -22,6 +23,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public string Description { get; set; }
 
 		public IUnit GridUnit { get; set; }
+		public StatsData UnitStats { get; set; }
 		
 
 		private void Awake()
