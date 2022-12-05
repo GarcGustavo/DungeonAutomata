@@ -15,7 +15,6 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 {
 	[RequireComponent(typeof(GridController2D))]
 	[RequireComponent(typeof(DraggableController))]
-	[RequireComponent(typeof(TopDownController))]
 	public class PlayerUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
 		public enum ControlType
@@ -252,8 +251,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				}
 				else if (_controlType == ControlType.RealTime)
 				{
-					var input = new Vector3(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"), 0);
-					MoveTopDown(input);
+					//var input = new Vector3(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"), 0);
+					//MoveTopDown(input);
 				}
 			}
 		}

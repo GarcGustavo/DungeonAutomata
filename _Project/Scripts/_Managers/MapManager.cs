@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts.Data;
 using DungeonAutomata._Project.Scripts.GridComponents;
@@ -197,7 +198,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			if (_tileMap == null) return;
 			var cellPos = grid.WorldToCell(cell);
 			//var cellCartPos = IsIsometric() ? GridUtils.GetCartesianPos(cellPos) : cellPos;
-			if (_tileMap.HasTile(cellPos))
+			if (_tileMap.HasTile(cellPos) && _gridMap[cellPos.x, cellPos.y])
 			{
 				var cellData = _gridMap[cellPos.x, cellPos.y];
 				if (cellData == null) return;
@@ -313,7 +314,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 					break;
 			}
 
-			var prefab = Instantiate(playerPrefab, _tileMap.GetCellCenterWorld(_playerSpawnPoint), Quaternion.identity);
+			var prefab = Instantiate(playerPrefab, _tileMap.CellToWorld(_playerSpawnPoint), Quaternion.identity);
 			_player = prefab.GetComponent<PlayerUnit>();
 			_player.InitializeUnit();
 			_player.CurrentPos = _playerSpawnPoint;
@@ -348,7 +349,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				//var tilePos = IsIsometric() ? GridUtils.GetIsometricPos(gridPos) : gridPos;
 				if (_gridMap[spawnPoint.x, spawnPoint.y].Occupant == null)
 				{
-					var prefab = Instantiate(enemyPrefab, _tileMap.GetCellCenterWorld(spawnPoint), Quaternion.identity);
+					var prefab = Instantiate(enemyPrefab, _tileMap.CellToWorld(spawnPoint), Quaternion.identity);
 					var enemy = prefab.GetComponent<EnemyUnit>();
 					enemy.InitializeUnit(data);
 					enemy.CurrentPos = spawnPoint;
@@ -384,7 +385,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			foreach (var spawnPoint in _itemSpawnPoints)
 			{
 				//Debug.Log("Spawning item at: " + spawnPoint);
-				var prefab = Instantiate(itemPrefab, _tileMap.GetCellCenterWorld(spawnPoint), Quaternion.identity);
+				var prefab = Instantiate(itemPrefab, _tileMap.CellToWorld(spawnPoint), Quaternion.identity);
 				var item = prefab.GetComponent<ItemUnit>();
 				
 				//Eventually move logic to a level director or something

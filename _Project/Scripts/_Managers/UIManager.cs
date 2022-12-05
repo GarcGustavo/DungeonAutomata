@@ -80,7 +80,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			if (target != null && target.GetType() != typeof(PlayerUnit))
 			{
 				var rect = _uiPanel.rect;
-				_infoPanel.transform.position = GetMousePopupPosition(rect.height, rect.width);
+				_infoPanel.transform.position = GetMousePopup(rect.height, rect.width);
 				_infoPanel.SetActive(true);
 				_unitInfoText.text = target.Description + "\n";
 			}

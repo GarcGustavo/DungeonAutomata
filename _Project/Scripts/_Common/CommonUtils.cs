@@ -65,7 +65,7 @@ namespace DungeonAutomata._Project.Scripts._Common
 		}
 		
 		//Displays info next to mouse position while keeping it on-screen
-		public static Vector3 GetMousePopupPosition(float height, float width)
+		public static Vector3 GetMousePopup(float height, float width)
 		{
 			var popupPosition = Input.mousePosition;
 			var offset = Vector3.zero;

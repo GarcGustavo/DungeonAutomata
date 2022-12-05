@@ -11,7 +11,7 @@ using DungeonAutomata._Project.Scripts.Data;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using Random = System.Random;
-using static DungeonAutomata._Project.Scripts.Utilities.GridUtils;
+using static DungeonAutomata._Project.Scripts._Common.GridUtils;
 
 namespace DungeonAutomata._Project.Scripts.GridComponents
 {

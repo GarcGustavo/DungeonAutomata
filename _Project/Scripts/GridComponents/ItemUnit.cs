@@ -104,8 +104,9 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					currentCell.Occupant = this;
 					currentCell.isWalkable = false;
 					//need to refactor, used to be isEmpty
-					//transform.position =  position;
-					transform.position =  _grid.GetCellCenterWorld(GridUtils.GetIsometricPos(position));
+					transform.position =  position;
+					//if(isometric)
+					//transform.position =  _grid.GetCellCenterWorld(GridUtils.GetIsometricPos(position));
 					CurrentPos = position;
 				
 					_eventManager.InvokeCellUpdate(previousCell);

@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f06ef9e385e40c9b0c0a3fc87508b60, type: 3}
   m_Name: Wall
   m_EditorClassIdentifier: 
-  cellSprite: {fileID: 21300000, guid: a07f8c60ab4624b4191d659dcf0c69ec, type: 3}
+  cellSprite: {fileID: 21300000, guid: aaae58c68f56e7943a52a3e091aa22c5, type: 3}
   gridPosition: {x: 0, y: 0, z: 0}
   cellType: 1
   isWalkable: 0
+  isometric: 0

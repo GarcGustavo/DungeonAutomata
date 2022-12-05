@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
+using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
 using DungeonAutomata._Project.Scripts.Data;
@@ -10,7 +11,7 @@ using DungeonAutomata._Project.Scripts.Utilities;
 using MoreMountains.Feedbacks;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using static DungeonAutomata._Project.Scripts.Utilities.GridUtils;
+using static DungeonAutomata._Project.Scripts._Common.GridUtils;
 
 namespace DungeonAutomata._Project.Scripts.Controllers
 {
@@ -72,7 +73,11 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				currentCell.isWalkable = false;
 			}
 
-			var cellPos = _grid.WorldToCell( GetIsometricPos(position));
+			//var cellPos = _grid.WorldToCell( position);
+			var cellPos = position;
+			
+			//if(isometric)
+			//var cellPos = _grid.WorldToCell(GetIsometricPos(position));
 			transform.position = cellPos;
 			_currentPosition = cellPos;
 			//transform.position = position;
@@ -113,11 +118,6 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		private bool IsFreeCell(CellData cell)
 		{
 			//TODO: optimize and organize
-			if (cell.cellType == CellTypes.Exit)
-			{
-				_eventManager.InvokePlayerExit();
-				return false;
-			}
 			if (cell.Occupant != null)
 			{
 				//Enemy collision logic
@@ -164,6 +164,11 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 							moveCD));
 						_eventManager.InvokeAttack(_unit, positions);
 						//Replace with actual feedbacks/animations later);
+						return false;
+					}
+					if (cell.cellType == CellTypes.Exit)
+					{
+						_eventManager.InvokePlayerExit();
 						return false;
 					}
 				}
