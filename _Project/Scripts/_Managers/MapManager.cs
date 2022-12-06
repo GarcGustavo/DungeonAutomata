@@ -37,7 +37,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private Vector3Int _playerSpawnPoint;
 		private List<Vector3Int> _startingRoom;
 		private List<EnemyUnit> _enemies;
-		private List<IUnit> _unitsToMove;
+		//private List<IUnit> _unitsToMove;
+		private int _unitsToMove = 0;
 		private List<ItemUnit> _items;
 		private List<Vector3Int> _enemySpawnPoints;
 		private List<Vector3Int> _itemSpawnPoints;
@@ -74,7 +75,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			mapGenerator = GetComponent<MapGenerator>();
 			_items = new List<ItemUnit>();
 			_enemies = new List<EnemyUnit>();
-			_unitsToMove = new List<IUnit>();
+			//_unitsToMove = new List<IUnit>();
 			_visibleCells = new List<Vector3Int>();
 			/*
 			var cellBounds = _tileMap.cellBounds;
@@ -210,14 +211,12 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				if (cellData.Occupant != null)
 				{
 					_uiManager.SetUnitInfo(cellData.Occupant);
-					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]"
-					+ "\n iso[" + cellPos + "]");
+					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]");
 				}
 				else
 				{
 					_uiManager.SetUnitInfo(null);
-					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]"
-					                        + "\n iso[" + cellPos + "]");
+					_uiManager.SetHoverText("Cell["+ cellData.gridPosition +"]");
 				}
 			}
 			//foreach (var visibleCell in _visibleCells)
@@ -250,31 +249,44 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			//_gridMap[unit.CurrentTile.x, unit.CurrentTile.y].Occupant = null;
 			//_gridMap[unit.CurrentTile.x, unit.CurrentTile.y].isWalkable = true;
-			if(_unitsToMove.Contains(unit))
-				_unitsToMove.Remove(unit);
+			Debug.Log("Removing unit");
+			Debug.Log("Units to move: " + _unitsToMove);
+			_unitsToMove--;
+			if (_unitsToMove <= 0)
+			{
+				foreach (var enemy in _enemies)
+				{
+					if (enemy == null)
+						continue;
+					if (enemy.isActiveAndEnabled)
+						_unitsToMove++;
+				}
+				_eventManager.InvokeTurnEnd();
+			}
+			//if(_unitsToMove.Contains(unit))
+			//	_unitsToMove.Remove(unit);
 		}
 
 		private void CheckUnitsToMove(IUnit unit)
 		{
-			var units = _unitsToMove;
-			if (units.Contains(unit))
+			//if (_unitsToMove.Count <= 0)
+			Debug.Log("Checking units to move");
+			Debug.Log("Units to move: " + _unitsToMove);
+			//else if (_unitsToMove.Contains(unit))
+			if (_unitsToMove > 0)
 			{
-				_unitsToMove.Remove(unit);
-				if (_unitsToMove.Count == 0)
-				{
-					//_eventManager.InvokeEnemyTurnEnd();
-					_eventManager.InvokeTurnEnd();
-					foreach (var enemy in _enemies)
-					{
-						if(enemy.isActiveAndEnabled)
-							_unitsToMove.Add(enemy);
-					}
-				}
+				_unitsToMove--;
 			}
-			else if (units.Count <= 0)
+			if (_unitsToMove <= 0)
 			{
+				foreach (var enemy in _enemies)
+				{
+					if (enemy == null)
+						continue;
+					if (enemy.isActiveAndEnabled)
+						_unitsToMove++;
+				}
 				_eventManager.InvokeTurnEnd();
-				//_eventManager.InvokeEnemyTurnEnd();
 			}
 		}
 
@@ -335,11 +347,13 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			{
 				if (room != _startingRoom)
 				{
-					for( int i = 0; i < 3; i++)
-					{
-						var pos = GridUtils.GetRandomPosition(room);
-						_enemySpawnPoints.Add(pos);
-					}
+					//for( int i = 0; i < 3; i++)
+					//{
+					//	var pos = GridUtils.GetRandomPosition(room);
+					//	_enemySpawnPoints.Add(pos);
+					//}
+					var pos = GridUtils.GetRandomPosition(room);
+					_enemySpawnPoints.Add(pos);
 				}
 			}
 			//Spawn enemies at available tiles
@@ -354,7 +368,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 					enemy.InitializeUnit(data);
 					enemy.CurrentPos = spawnPoint;
 					_enemies.Add(enemy);
-					_unitsToMove.Add(enemy);
+					//_unitsToMove.Add(enemy);
+					_unitsToMove++;
 					_gridMap[spawnPoint.x, spawnPoint.y].Occupant = enemy;
 					_gridMap[spawnPoint.x, spawnPoint.y].isWalkable = false;
 				}
@@ -373,13 +388,18 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				{
 					//TODO: Add value map logic to spawn items in the best position
 				}
-				for (int i = 0; i < 3; i++)
+				//for (int i = 0; i < 3; i++)
+				//{
+				//	var spawn = GridUtils.GetRandomPosition(room);
+				//	if (_gridMap[spawn.x, spawn.y].Occupant == null)
+				//	{
+				//		_itemSpawnPoints.Add(spawn);
+				//	}
+				//}
+				var spawn = GridUtils.GetRandomPosition(room);
+				if (_gridMap[spawn.x, spawn.y].Occupant == null)
 				{
-					var spawn = GridUtils.GetRandomPosition(room);
-					if (_gridMap[spawn.x, spawn.y].Occupant == null)
-					{
-						_itemSpawnPoints.Add(spawn);
-					}
+					_itemSpawnPoints.Add(spawn);
 				}
 			}
 			foreach (var spawnPoint in _itemSpawnPoints)
@@ -448,6 +468,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		//TODO: Tie map updates to appropriate events
 		private void UpdatePlayerMap()
 		{
+			Debug.Log("Updating player map");
 			_playerMap = GridUtils.GetDijkstraMap(_player.CurrentPos, _gridMap);
 		}
 		

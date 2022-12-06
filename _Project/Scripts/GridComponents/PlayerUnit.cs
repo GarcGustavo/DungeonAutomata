@@ -118,15 +118,27 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void UseEnergy()
 		{
-			if (CurrentEnergy <= 0)
+			if (_inputEnabled)
 			{
-				CurrentEnergy = MaxEnergy;
-				_eventManager.InvokeTurnEnd();
-			}
-			else
-			{
-				CurrentEnergy--;
-				_eventManager.InvokePlayerAction();
+				if (CurrentEnergy <= 0)
+				{
+					CurrentEnergy = MaxEnergy;
+					Debug.Log("Energy used");
+					SetMoveState(false);
+					_eventManager.InvokeTurnEnd();
+				}
+				else
+				{
+					CurrentEnergy--;
+					Debug.Log("Energy remaining: " + CurrentEnergy);
+					_eventManager.InvokePlayerAction();
+					if (CurrentEnergy <= 0)
+					{
+						Debug.Log("Energy used");
+						SetMoveState(false);
+						_eventManager.InvokeTurnEnd();
+					}
+				}
 			}
 		}
 
@@ -143,6 +155,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void SetMoveState(bool isMoving)
 		{
+			Debug.Log("Move state: " + isMoving);
 			_inputEnabled = isMoving;
 			//_controller.CanMove = isMoving;
 		}

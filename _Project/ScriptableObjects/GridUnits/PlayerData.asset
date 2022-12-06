@@ -16,7 +16,7 @@ MonoBehaviour:
   playerName: BasicPlayer
   Health: 10
   Mp: 5
-  Energy: 0
+  Energy: 1
   Level: 1
   Exp: 0
   Strength: 1

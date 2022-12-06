@@ -84,6 +84,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		public void InvokeEnemyTurnStart()
 		{
+			Debug.Log("Enemy turn start event!!!!!!!!!!!");
 			OnEnemyTurnStart?.Invoke();
 		}
 

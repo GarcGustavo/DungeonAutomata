@@ -101,6 +101,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_player = _turnManager.GetPlayer();
 			if (_player != null)
 			{
+				Debug.Log("Updating player info");
 				_player.UpdateDescription();
 				_playerInfo.text = _player.Description;
 			}

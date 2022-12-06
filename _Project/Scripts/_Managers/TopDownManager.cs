@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using Cinemachine;
-using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts.GridComponents;
 using DungeonAutomata._Project.Scripts.Utilities;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using static DungeonAutomata._Project.Scripts._Common.CommonTypes;
 using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
 
 namespace DungeonAutomata._Project.Scripts._Managers
@@ -26,8 +26,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		private MapManager _mapManager;
 		private UIManager _uiManager;
 		private List<ItemUnit> _inventory;
-		private CommonTypes.GameState _previousState;
-		private CommonTypes.GameState _state;
+		private GameState _previousState;
+		private GameState _state;
 		private int _turnCount = 0;
 		private List<ICommand> _actionList;
 
@@ -58,7 +58,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_eventManager.OnTurnEnd += TurnEnd;
 			_inventory = new List<ItemUnit>();
 			_actionList = new List<ICommand>();
-			_state = CommonTypes.GameState.PlayerTurn;
+			_state = GameState.PlayerTurn;
 			_previousState = _state;
 			_turnCount = 0;
 		}
@@ -106,7 +106,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void ToggleMenu()
 		{
-			if (_state == CommonTypes.GameState.Menu)
+			if (_state == GameState.Menu)
 			{
 				UpdateGameState(_previousState);
 				//StartCoroutine(UpdateGameState(_previousState));
@@ -114,37 +114,37 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			else
 			{
 				_player.SetMoveState(false);
-				UpdateGameState(CommonTypes.GameState.Menu);
+				UpdateGameState(GameState.Menu);
 				//StartCoroutine(UpdateGameState(GameState.Menu));
 			}
 		}
 
-		private void UpdateGameState(CommonTypes.GameState newState)
+		private void UpdateGameState(GameState newState)
 		{
 			_previousState = _state;
-			Debug.Log("State: " + _state);
+			Debug.Log("Prev State: " + _previousState);
+			Debug.Log("Next State: " + newState);
 			switch (newState)
 			{
-				case CommonTypes.GameState.PlayerTurn:
+				case GameState.PlayerTurn:
 					//Execute commands registered by enemies in last turn
 					//ExecuteCommands();
+					_eventManager.InvokePlayerTurnStart();
 					_eventManager.InvokeUpdateHUD();
 					//yield return GetWaitForSeconds(.05f);
-					_eventManager.InvokePlayerTurnStart();
 					_player.SetMoveState(true);
 					break;
-				case CommonTypes.GameState.EnemyTurn:
+				case GameState.EnemyTurn:
 					//Execute commands registered by player in last turn
-					_eventManager.InvokeUpdateHUD();
-					_player.SetMoveState(false);
-					//yield return GetWaitForSeconds(.05f);
 					_eventManager.InvokeEnemyTurnStart();
+					_eventManager.InvokeUpdateHUD();
+					//yield return GetWaitForSeconds(.05f);
 					break;
-				case CommonTypes.GameState.Lose:
+				case GameState.Lose:
 					_eventManager.InvokePlayerDeath();
 					_player.SetMoveState(false);
 					break;
-				case CommonTypes.GameState.Menu:
+				case GameState.Menu:
 					_player.SetMoveState(false);
 					break;
 			}
@@ -153,7 +153,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void PlayerDeath()
 		{
-			_state = CommonTypes.GameState.Lose;
+			_state = GameState.Lose;
 		}
 
 		private void NextStage()
@@ -161,9 +161,10 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			//UpdateGameState(GameState.Win);
 			//StartCoroutine(UpdateGameState(GameState.Win));
 			//UpdateGameState(GameState.Win);
+			Debug.Log("Next Stage");
 			_mapManager.ResetMap();
 			_mapManager.InitializeMap();
-			UpdateGameState(CommonTypes.GameState.PlayerTurn);
+			UpdateGameState(GameState.PlayerTurn);
 		}
 
 		//-------------------------------------------------------------------
@@ -189,15 +190,18 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void TurnEnd()
 		{
-			if(_executing) 
-				return;
-			StartCoroutine(ExecuteCommands());
+			Debug.Log("Ending Turn");
+			if (!_executing)
+			{
+				Debug.Log("Ended Turn");
+				_executing = true;
+				StartCoroutine(ExecuteCommands());
+			}
 		}
 
 		public IEnumerator ExecuteCommands()
 		{
 			_turnCount++;
-			_executing = true;
 			var commands = _actionList.ToArray();
 			//TODO: Add initiative system and lock registration of commands after turn end
 			Debug.Log("Executing " + _actionList.Count + " commands");
@@ -209,16 +213,17 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			}
 			yield return GetWaitForSeconds(.1f);
 			_actionList.Clear();
-			_executing = false;
-			if (_state == CommonTypes.GameState.PlayerTurn)
+			if (_state == GameState.PlayerTurn)
 			{
 				//StartCoroutine(UpdateGameState(GameState.EnemyTurn));
-				UpdateGameState(CommonTypes.GameState.EnemyTurn);
+				_executing = false;
+				UpdateGameState(GameState.EnemyTurn);
 			}
-			else if (_state == CommonTypes.GameState.EnemyTurn)
+			else if (_state == GameState.EnemyTurn)
 			{
 				//StartCoroutine(UpdateGameState(GameState.PlayerTurn));
-				UpdateGameState(CommonTypes.GameState.PlayerTurn);
+				_executing = false;
+				UpdateGameState(GameState.PlayerTurn);
 			}
 			//_eventManager.InvokeTurnEnd();
 		}
@@ -229,7 +234,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_actionList.Add(command);
 		}
 
-		public CommonTypes.GameState GetState()
+		public GameState GetState()
 		{
 			return _state;
 		}

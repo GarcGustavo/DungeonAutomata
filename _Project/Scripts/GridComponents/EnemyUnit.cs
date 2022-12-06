@@ -51,8 +51,13 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			_mapManager = MapManager.Instance;
 			_eventManager = EventManager.Instance;
 			_controller = GetComponent<GridController2D>();
-			_eventManager.OnEnemyTurnStart += UpdateState;
 			_spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+			//_eventManager.OnEnemyTurnStart += UpdateState;
+		}
+
+		private void Start()
+		{
+			_eventManager.OnEnemyTurnStart += UpdateState;
 		}
 
 		//TODO: remove redundant overload from interface
@@ -92,24 +97,28 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			               $"{_enemyData.description}\n";
 		}
 
-		private void UpdateState()
+		public void UpdateState()
 		{
-			if (CurrentHP <= 0)
-			{
-				Die();
-				return;
-			}
-			_controller.InitializeGrid();
+			Debug.Log("Enemy initializing controller grid");
 			_cellMap = _mapManager.GetCellMap();
-			Hunger++;
-			Thirst++;
+			_controller.InitializeGrid();
 			CurrentTarget = LookForPlayer();
 			if (CurrentTarget != null)
 			{
-				_turnManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
+				//_turnManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
 				//Move(CurrentTarget);
 			}
+			if (CurrentHP <= 0)
+			{
+				Die();
+				//_eventManager.InvokeUnitAction(this);
+				return;
+			}
+			Debug.Log("Enemy registering command");
+			_turnManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
 			_eventManager.InvokeUnitAction(this);
+			Hunger++;
+			Thirst++;
 		}
 
 		private void PaintCells(List<Vector3Int> cells, Color color)
@@ -174,6 +183,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Die()
 		{
+			Debug.Log("Enemy died at: " + CurrentPos);
 			var cell = _cellMap[CurrentPos.x, CurrentPos.y];
 			cell.Occupant = null;
 			cell.isWalkable = true;
