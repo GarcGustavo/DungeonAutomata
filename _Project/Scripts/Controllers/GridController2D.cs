@@ -37,15 +37,11 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		private IUnit _unit;
 		private Transform _unitSprite;
 
-		//Public variables and events
-		public bool CanMove { get; set; }
-
 		private void Awake()
 		{
 			_turnManager = TopDownManager.Instance;
 			_eventManager = EventManager.Instance;
 			_mapManager = MapManager.Instance;
-			CanMove = true;
 			_unit = GetComponent<IUnit>();
 			_unitSprite = GetComponentInChildren<SpriteRenderer>().transform;
 		}

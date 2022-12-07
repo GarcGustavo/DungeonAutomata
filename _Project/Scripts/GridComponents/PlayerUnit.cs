@@ -116,29 +116,17 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			              $"Thirst: {Thirst}\n";
 		}
 
-		public void UseEnergy()
+		public IEnumerator UseEnergy()
 		{
 			if (_inputEnabled)
 			{
-				if (CurrentEnergy <= 0)
-				{
-					CurrentEnergy = MaxEnergy;
-					Debug.Log("Energy used");
-					SetMoveState(false);
-					_eventManager.InvokeTurnEnd();
-				}
-				else
-				{
-					CurrentEnergy--;
-					Debug.Log("Energy remaining: " + CurrentEnergy);
-					_eventManager.InvokePlayerAction();
-					if (CurrentEnergy <= 0)
-					{
-						Debug.Log("Energy used");
-						SetMoveState(false);
-						_eventManager.InvokeTurnEnd();
-					}
-				}
+				//Move state updated on player turn start
+				SetMoveState(false);
+				CurrentEnergy--;
+				Debug.Log("Energy remaining: " + CurrentEnergy);
+				yield return CommonUtils.GetWaitForSeconds(.05f);
+				_eventManager.InvokePlayerAction();
+				_eventManager.InvokeTurnEnd();
 			}
 		}
 
@@ -205,8 +193,9 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void Die()
 		{
-			_eventManager.InvokePlayerDeath();
 			gameObject.SetActive(false);
+			Debug.Log("Player died!");
+			_eventManager.InvokePlayerDeath();
 		}
 
 		public void Consume(ItemUnit itemUnit)
@@ -229,26 +218,26 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					{
 						var direction = zAxisUp ? Vector3Int.forward : Vector3Int.up;
 						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
-						UseEnergy();
+						StartCoroutine(UseEnergy());
 						//Move(CurrentTile + direction);
 					}
 					else if (Input.GetKey(KeyCode.S) && !Input.GetKeyUp(KeyCode.S))
 					{
 						var direction = zAxisUp ? Vector3Int.back : Vector3Int.down;
 						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
-						UseEnergy();
+						StartCoroutine(UseEnergy());
 						//Move(CurrentTile + direction);
 					}
 					else if (Input.GetKey(KeyCode.A) && !Input.GetKeyUp(KeyCode.A))
 					{
 						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.left));
-						UseEnergy();
+						StartCoroutine(UseEnergy());
 						//Move(CurrentTile + Vector3Int.left);
 					}
 					else if (Input.GetKey(KeyCode.D) && !Input.GetKeyUp(KeyCode.D))
 					{
 						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.right));
-						UseEnergy();
+						StartCoroutine(UseEnergy());
 						//Move(CurrentTile + Vector3Int.right);
 					}
 					else if (Input.GetKeyDown(KeyCode.Tab))
@@ -259,7 +248,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					{
 						//Essentially a fast forward button
 						//_eventManager.InvokePlayerAction();
-						UseEnergy();
+						StartCoroutine(UseEnergy());
 					}
 				}
 				else if (_controlType == ControlType.RealTime)

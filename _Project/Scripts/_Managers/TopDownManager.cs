@@ -55,7 +55,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_eventManager.OnMenu += ToggleMenu;
 			_eventManager.OnPlayerExit += NextStage;
 			_eventManager.OnPlayerDeath += PlayerDeath;
-			_eventManager.OnTurnEnd += TurnEnd;
+			_eventManager.OnTurnEnd += EndTurn;
 			_inventory = new List<ItemUnit>();
 			_actionList = new List<ICommand>();
 			_state = GameState.PlayerTurn;
@@ -153,7 +153,9 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private void PlayerDeath()
 		{
-			_state = GameState.Lose;
+			NextStage();
+			UpdateGameState(GameState.PlayerTurn);
+			//_state = GameState.Lose;
 		}
 
 		private void NextStage()
@@ -188,7 +190,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 
 		private bool _executing = false;
 
-		private void TurnEnd()
+		private void EndTurn()
 		{
 			Debug.Log("Ending Turn");
 			if (!_executing)
@@ -217,12 +219,20 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			{
 				//StartCoroutine(UpdateGameState(GameState.EnemyTurn));
 				_executing = false;
-				UpdateGameState(GameState.EnemyTurn);
+				if (_player.CurrentEnergy > 0)
+				{
+					UpdateGameState(GameState.PlayerTurn);
+				}
+				else
+				{
+					UpdateGameState(GameState.EnemyTurn);
+				}
 			}
 			else if (_state == GameState.EnemyTurn)
 			{
 				//StartCoroutine(UpdateGameState(GameState.PlayerTurn));
 				_executing = false;
+				_player.CurrentEnergy = _player.MaxEnergy;
 				UpdateGameState(GameState.PlayerTurn);
 			}
 			//_eventManager.InvokeTurnEnd();
