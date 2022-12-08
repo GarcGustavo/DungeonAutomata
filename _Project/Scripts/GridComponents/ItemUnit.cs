@@ -55,7 +55,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			{
 				//Use events to notify target unless consumable, in which case target is unit using item
 				case ItemType.Consumable:
-					// Use item on target
+					//_mapManager.GetCellMap()[target.x, target.y].Occupant;
 					break;
 				case ItemType.Equipment:
 					// Equip item on target
@@ -116,7 +116,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				else
 				{
 					//transform.position = GridUtils.GetIsometricPos(CurrentPos);
-					transform.position = _grid.GetCellCenterWorld(CurrentPos);
+					//transform.position = _grid.GetCellCenterWorld(CurrentPos);
+					transform.position = _grid.CellToWorld(CurrentPos);
 				}
 			}
 		}

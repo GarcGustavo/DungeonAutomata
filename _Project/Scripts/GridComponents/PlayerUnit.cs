@@ -208,7 +208,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			throw new System.NotImplementedException();
 		}
 
-		public void GetPlayerInput()
+		private void GetPlayerInput()
 		{
 			if (_inputEnabled)
 			{

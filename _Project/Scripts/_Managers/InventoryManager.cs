@@ -39,6 +39,14 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		public void AddItem(IItem item)
 		{
 			Debug.Log("Item added");
+			if(item.ItemType == ItemType.Consumable)
+			{
+				item.Use(_turnManager.GetPlayer().CurrentPos);
+			}
+			else
+			{
+				Items.Add(item);
+			}
 			Items.Add(item);
 			_eventManager.InvokeUpdateInventory(item);
 		}

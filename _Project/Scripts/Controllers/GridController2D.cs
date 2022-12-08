@@ -35,7 +35,8 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		private List<Vector3Int> _optimalPath;
 		private Stack<Vector3Int> _optimalPathStack;
 		private IUnit _unit;
-		private Transform _unitSprite;
+		private SpriteRenderer _unitSpriteRenderer;
+		private Transform _unitSpriteTransform;
 
 		private void Awake()
 		{
@@ -43,7 +44,8 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			_eventManager = EventManager.Instance;
 			_mapManager = MapManager.Instance;
 			_unit = GetComponent<IUnit>();
-			_unitSprite = GetComponentInChildren<SpriteRenderer>().transform;
+			_unitSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+			_unitSpriteTransform = GetComponentInChildren<SpriteRenderer>().transform;
 		}
 
 		public void InitializeGrid()
@@ -102,6 +104,8 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				cell.Occupant = _unit;
 				previousCell.isWalkable = true;
 				previousCell.Occupant = null;
+				if(pos.x != _currentPosition.x )
+					_unitSpriteRenderer.flipX =  pos.x < _currentPosition.x;
 				_currentPosition = pos;
 				_unit.CurrentPos = pos;
 				//var gridPos = _mapManager.IsIsometric() ? GetIsometricPos(pos) : pos;
@@ -126,7 +130,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 						var positions = new List<Vector3Int>();
 						positions.Add(cell.Occupant.CurrentPos);
 						//Debug.Log("Attacking: " + cell.gridPosition);
-						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
+						StartCoroutine(GridUtils.PunchToPosition(_unitSpriteTransform, 
 							_currentPosition, 
 							cell.gridPosition, 
 							moveCD));
@@ -154,7 +158,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 						var positions = new List<Vector3Int>();
 						positions.Add(cell.Occupant.CurrentPos);
 						Debug.Log("Attacking: " + cell.gridPosition);
-						StartCoroutine(GridUtils.PunchToPosition(_unitSprite, 
+						StartCoroutine(GridUtils.PunchToPosition(_unitSpriteTransform, 
 							_currentPosition, 
 							cell.gridPosition, 
 							moveCD));
