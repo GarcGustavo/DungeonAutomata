@@ -205,6 +205,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				if (cellData == null) return;
 				highLightMap.ClearAllTiles();
 				highLightMap.SetTile(cellPos, highLightTile);
+				//highLightMap.SetColor(cellPos, Color.green);
 				//Debug.Log("Highlighting cart cell: " + cellCartPos + ", iso: " + cellPos);
 
 				_visibleCells = GridUtils.GetLine(_player.CurrentPos, cellPos);

@@ -104,7 +104,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 				cell.Occupant = _unit;
 				previousCell.isWalkable = true;
 				previousCell.Occupant = null;
-				if(pos.x != _currentPosition.x )
+				if(pos.x != _currentPosition.x)
 					_unitSpriteRenderer.flipX =  pos.x < _currentPosition.x;
 				_currentPosition = pos;
 				_unit.CurrentPos = pos;
@@ -130,6 +130,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 						var positions = new List<Vector3Int>();
 						positions.Add(cell.Occupant.CurrentPos);
 						//Debug.Log("Attacking: " + cell.gridPosition);
+						_unitSpriteRenderer.flipX =  cell.gridPosition.x < _currentPosition.x;
 						StartCoroutine(GridUtils.PunchToPosition(_unitSpriteTransform, 
 							_currentPosition, 
 							cell.gridPosition, 
@@ -158,6 +159,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 						var positions = new List<Vector3Int>();
 						positions.Add(cell.Occupant.CurrentPos);
 						Debug.Log("Attacking: " + cell.gridPosition);
+						_unitSpriteRenderer.flipX =  cell.gridPosition.x < _currentPosition.x;
 						StartCoroutine(GridUtils.PunchToPosition(_unitSpriteTransform, 
 							_currentPosition, 
 							cell.gridPosition, 
