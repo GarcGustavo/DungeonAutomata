@@ -89,12 +89,6 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_eventManager.InvokeUpdateHUD();
 			//UpdateGameState(_state);
 		}
-		private void Update()
-		{
-			//Highlight tile under mouse
-			var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-			_mapManager.HighLightCell(Vector3Int.FloorToInt(mouseWorldPos));
-		}
 
 		public void ResetCamera(Transform target)
 		{
