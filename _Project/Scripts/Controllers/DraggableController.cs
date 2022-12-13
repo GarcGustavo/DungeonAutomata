@@ -16,10 +16,14 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		private IUnit _unit;
 		private SpriteRenderer _renderer;
 		private Vector3 _rayPoint = Vector3.zero;
+		private Vector3 _mapPos = Vector3.zero;
+		private Camera _camera;
+		private Vector3 _spriteOffset = Vector3.zero;
 		void Start()
 		{
 			_unit = GetComponent<IUnit>();
 			_renderer = GetComponentInChildren<SpriteRenderer>();
+			_camera = Camera.main;
 		}
    
 		void OnMouseEnter()
@@ -47,16 +51,28 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 		{
 			_dragging = false;
 			//_unit.SetPosition(Vector3Int.FloorToInt(_rayPoint + _startDist));
-			_unit.SetPosition(Vector3Int.RoundToInt(_rayPoint + _startDist));
+			//_unit.SetPosition(Vector3Int.RoundToInt(_rayPoint + _startDist));
+			
+			_unit.SetPosition(Vector3Int.FloorToInt(_mapPos));
 		}
  
-		void Update()
+		void FixedUpdate()
 		{
 			if (_dragging)
 			{
-				Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-				_rayPoint = ray.GetPoint(_distance);
-				transform.position = _rayPoint + _startDist;
+				Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+				RaycastHit hit;
+				if (Physics.Raycast(ray, out hit))
+				{
+					var mouseWorldPos = hit.point;
+					var worldPos = new Vector3(mouseWorldPos.x - .5f, mouseWorldPos.y - .5f, 0);
+					_mapPos = new Vector3(mouseWorldPos.x, mouseWorldPos.y, 0);
+					transform.position = worldPos;
+					Debug.Log("dropping at mapPos: " + _mapPos);
+				}
+				//_rayPoint = ray.GetPoint(_distance);
+				//var finalPos = _rayPoint + _startDist;
+				//transform.position = new Vector3(finalPos.x, finalPos.y, _zAxisLock);
 			}
 		}
 	}
