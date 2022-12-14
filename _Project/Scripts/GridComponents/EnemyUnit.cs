@@ -102,23 +102,26 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			Debug.Log("Enemy initializing controller grid");
 			_cellMap = _mapManager.GetCellMap();
 			_controller.InitializeGrid();
-			CurrentTarget = LookForPlayer();
-			if (CurrentTarget != null)
+			if (CanMove)
 			{
-				//_turnManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
-				//Move(CurrentTarget);
+				CurrentTarget = LookForPlayer();
+				if (CurrentTarget != null)
+				{
+					//_turnManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
+					//Move(CurrentTarget);
+				}
+				if (CurrentHP <= 0)
+				{
+					Die();
+					//_eventManager.InvokeUnitAction(this);
+					return;
+				}
+				Debug.Log("Enemy registering command");
+				_turnManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
+				_eventManager.InvokeUnitAction(this);
+				Hunger++;
+				Thirst++;
 			}
-			if (CurrentHP <= 0)
-			{
-				Die();
-				//_eventManager.InvokeUnitAction(this);
-				return;
-			}
-			Debug.Log("Enemy registering command");
-			_turnManager.RegisterCommand(new MoveCommand(this, CurrentTarget));
-			_eventManager.InvokeUnitAction(this);
-			Hunger++;
-			Thirst++;
 		}
 
 		private void PaintCells(List<Vector3Int> cells, Color color)
@@ -146,6 +149,31 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			{
 				_controller.SetPosition(CurrentPos);
 			}
+		}
+		
+		public void Grab(Vector3Int target)
+		{
+			var cell = _mapManager.GetCellMap()[target.x, target.y];
+			if (cell.Occupant != null)
+			{
+				var unit = cell.Occupant;
+				if (unit != null)
+				{
+					cell.Occupant = null;
+					unit.CurrentPos = new Vector3Int(-1, -1, -1);
+					unit.SetGrabbedBy(transform);
+				}
+			}
+		}
+		public void SetGrabbedBy(Transform grabber)
+		{
+			transform.position = grabber.position + Vector3.up/4 + Vector3.back/2;
+			transform.SetParent(grabber);
+			CanMove = false;
+			_cellMap[CurrentPos.x, CurrentPos.y].Occupant = null;
+			_cellMap[CurrentPos.x, CurrentPos.y].isWalkable = true;
+			_mapManager.UpdateCell(_cellMap[CurrentPos.x, CurrentPos.y]);
+			CurrentPos = new Vector3Int(-1, -1, -1);
 		}
 
 		private Vector3Int LookForPlayer()

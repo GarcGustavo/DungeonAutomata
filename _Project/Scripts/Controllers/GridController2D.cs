@@ -57,6 +57,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		public void SetPosition(Vector3Int position)
 		{
+			cellMap = _mapManager.GetCellMap();
 			var previousCell = cellMap[_unit.CurrentPos.x, _unit.CurrentPos.y];
 			if (previousCell != null)
 			{
@@ -69,23 +70,30 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 			{
 				currentCell.Occupant = _unit;
 				currentCell.isWalkable = false;
+				transform.position = position;
+				_currentPosition = position;
+				_unit.CurrentPos = position;
+			
+				_eventManager.InvokeCellUpdate(previousCell);
+				_eventManager.InvokeCellUpdate(currentCell);
+			}
+			else
+			{
+				//transform.position = GridUtils.GetIsometricPos(CurrentPos);
+				//transform.position = _grid.GetCellCenterWorld(CurrentPos);
+				transform.position = _grid.CellToWorld(_unit.CurrentPos);
 			}
 
-			//var cellPos = _grid.WorldToCell( position);
-			var cellPos = position;
+			//var cellPos = _grid.WorldToCell(position);
+			//var cellPos = position;
 			
 			//if(isometric)
 			//var cellPos = _grid.WorldToCell(GetIsometricPos(position));
-			transform.position = cellPos;
-			_currentPosition = cellPos;
 			//transform.position = position;
 
 			//var gridPos = _mapManager.IsIsometric() ? GetIsometricPos(position) : position;
 			//transform.position =  position;
 			//StartCoroutine(MoveToPosition(transform, gridPos, moveCD));
-			
-			_eventManager.InvokeCellUpdate(previousCell);
-			_eventManager.InvokeCellUpdate(currentCell);
 			//_mapManager.UpdateCellMap(cellMap);
 		}
 

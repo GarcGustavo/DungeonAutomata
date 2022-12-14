@@ -42,6 +42,23 @@ namespace DungeonAutomata._Project.Scripts._Common
 		
 		#region GRIDCELLAPI
 		//General cell search methods
+		public static Vector3Int GetMouseCellPosition(Camera camera, bool debug = false)
+		{
+			Ray ray = camera.ScreenPointToRay(Input.mousePosition);
+			RaycastHit hit;
+			if (debug)
+			{
+				Debug.DrawRay(ray.origin, ray.direction * 100, Color.red);
+			}
+
+			if (Physics.Raycast(ray, out hit))
+			{
+				var mouseWorldPos = hit.point;
+				return Vector3Int.FloorToInt(mouseWorldPos);
+			}
+
+			return new Vector3Int(-1, -1, -1);
+		}
 		public static int GetCellDistance(Vector3Int pos1, Vector3Int pos2)
 		{
 			var x = Mathf.Abs(pos1.x - pos2.x);

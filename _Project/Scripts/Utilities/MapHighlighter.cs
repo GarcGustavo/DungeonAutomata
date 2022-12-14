@@ -24,17 +24,8 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 		private void FixedUpdate()
 		{
 			//Highlight tile under mouse
-			Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
-			RaycastHit hit;
-			if (debug)
-			{
-				Debug.DrawRay(ray.origin, ray.direction * 100, Color.red);
-			}
-			if (Physics.Raycast(ray, out hit))
-			{
-				var mouseWorldPos = hit.point;
-				MapManager.Instance.HighLightCell(Vector3Int.FloorToInt(mouseWorldPos));
-			}
+			MapManager.Instance.HighLightCell(GridUtils.GetMouseCellPosition(_camera, true));
 		}
+
 	}
 }

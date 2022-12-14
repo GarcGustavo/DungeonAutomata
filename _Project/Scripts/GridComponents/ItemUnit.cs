@@ -1,3 +1,4 @@
+using System;
 using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
@@ -120,6 +121,11 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					transform.position = _grid.CellToWorld(CurrentPos);
 				}
 			}
+		}
+		public void SetGrabbedBy(Transform grabber)
+		{
+			transform.position = grabber.position + Vector3.up/4 + Vector3.back/2;
+			transform.SetParent(grabber);
 		}
 
 		public void Consume(ItemUnit itemUnit)

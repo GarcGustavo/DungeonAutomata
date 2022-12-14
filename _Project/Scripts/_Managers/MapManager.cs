@@ -259,7 +259,9 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				{
 					if (enemy == null)
 						continue;
-					if (enemy.isActiveAndEnabled)
+					if (!enemy.isActiveAndEnabled)
+						continue;
+					if (enemy.CanMove)
 						_unitsToMove++;
 				}
 				_eventManager.InvokeTurnEnd();
@@ -284,7 +286,9 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				{
 					if (enemy == null)
 						continue;
-					if (enemy.isActiveAndEnabled)
+					if (!enemy.isActiveAndEnabled)
+						continue;
+					if (enemy.CanMove)
 						_unitsToMove++;
 				}
 				_eventManager.InvokeTurnEnd();

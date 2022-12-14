@@ -207,6 +207,24 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			throw new System.NotImplementedException();
 		}
+		
+		public void Grab(Vector3Int target)
+		{
+			Debug.Log("Grabbing at: " + target);
+			var cell = _cellMap[target.x, target.y];
+			if (cell.Occupant != null)
+			{
+				var unit = cell.Occupant;
+				unit?.SetGrabbedBy(transform);
+			}
+		}
+
+		public void SetGrabbedBy(Transform grabber)
+		{
+			transform.position = grabber.position + Vector3.up/2;
+			transform.SetParent(grabber);
+			_inputEnabled = false;
+		}
 
 		private void GetPlayerInput()
 		{
@@ -243,6 +261,17 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					else if (Input.GetKeyDown(KeyCode.Tab))
 					{
 						_eventManager.InvokeMenu();
+					}
+					else if (Input.GetMouseButtonDown(1))
+					{
+						Debug.Log("Right click");
+						_manager.RegisterCommand(
+							new GrabCommand(
+								this, 
+								GridUtils.GetMouseCellPosition(Camera.main, true)
+								)
+							);
+						StartCoroutine(UseEnergy());
 					}
 					else if (Input.GetKey(KeyCode.Space) && !Input.GetKeyUp(KeyCode.Space))
 					{

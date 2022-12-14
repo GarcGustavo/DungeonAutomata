@@ -11,5 +11,6 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 		public void MoveTurnBased(Vector3Int position);
 		public void Attack(IUnit source, IUnit target);
 		public void Attack(Vector3Int target, AttackData data);
+		void Grab(Vector3Int target);
 	}
 }
