@@ -12,5 +12,6 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 		public void Attack(IUnit source, IUnit target);
 		public void Attack(Vector3Int target, AttackData data);
 		void Grab(Vector3Int target);
+		void Throw(Vector3Int target);
 	}
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
@@ -161,9 +162,39 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				{
 					cell.Occupant = null;
 					unit.CurrentPos = new Vector3Int(-1, -1, -1);
+					_heldUnit = unit;
+					_bGrabbing = true;
 					unit.SetGrabbedBy(transform);
 				}
 			}
+		}
+
+		private bool _bGrabbing = false;
+		private IUnit _heldUnit;
+		public void Throw(Vector3Int target)
+		{
+			Debug.Log("Throw at: " + target);
+			var cell = _cellMap[target.x, target.y];
+			if (_bGrabbing)
+			{
+				var unit = _heldUnit;
+				unit?.ThrowToPosition(target);
+				_bGrabbing = false;
+				_heldUnit = null;
+			}
+		}
+
+		public void ThrowToPosition(Vector3Int target)
+		{
+			Debug.Log("Throw at: " + target);
+			//TODO: Add to utilities class and create coroutine to prevent movement while playing animation
+			transform.DOJump(target, .5f, 1, .5f);
+			//transform.position = target;
+			transform.SetParent(null);
+			CanMove = true;
+			CurrentPos = target;
+			SetPosition(target);
+			_mapManager.UpdateCell(_cellMap[CurrentPos.x, CurrentPos.y]);
 		}
 		public void SetGrabbedBy(Transform grabber)
 		{

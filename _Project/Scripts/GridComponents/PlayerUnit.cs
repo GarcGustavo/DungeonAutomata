@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
@@ -207,6 +208,31 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			throw new System.NotImplementedException();
 		}
+
+		private bool _bGrabbing = false;
+		private IUnit _heldUnit;
+		public void Throw(Vector3Int target)
+		{
+			Debug.Log("Throw at: " + target);
+			var cell = _cellMap[target.x, target.y];
+			if (_bGrabbing)
+			{
+				var unit = _heldUnit;
+				unit?.ThrowToPosition(cell.gridPosition);
+				_bGrabbing = false;
+				_heldUnit = null;
+			}
+		}
+
+		public void ThrowToPosition(Vector3Int target)
+		{
+			//TODO: Add to utilities class and create coroutine to prevent movement while playing animation
+			transform.DOJump(target, .5f, 1, .2f);
+			//transform.position = target;
+			SetPosition(target);
+			transform.SetParent(null);
+			_inputEnabled = true;
+		}
 		
 		public void Grab(Vector3Int target)
 		{
@@ -216,6 +242,8 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			{
 				var unit = cell.Occupant;
 				unit?.SetGrabbedBy(transform);
+				_bGrabbing = true;
+				_heldUnit = unit;
 			}
 		}
 
@@ -265,12 +293,24 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					else if (Input.GetMouseButtonDown(1))
 					{
 						Debug.Log("Right click");
-						_manager.RegisterCommand(
-							new GrabCommand(
-								this, 
-								GridUtils.GetMouseCellPosition(Camera.main, true)
+						if (!_bGrabbing)
+						{
+							_manager.RegisterCommand(
+								new GrabCommand(
+									this, 
+									GridUtils.GetMouseCellPosition(Camera.main, true)
 								)
 							);
+						}
+						else
+						{
+							_manager.RegisterCommand(
+								new ThrowCommand(
+									this, 
+									GridUtils.GetMouseCellPosition(Camera.main, true)
+								)
+							);
+						}
 						StartCoroutine(UseEnergy());
 					}
 					else if (Input.GetKey(KeyCode.Space) && !Input.GetKeyUp(KeyCode.Space))

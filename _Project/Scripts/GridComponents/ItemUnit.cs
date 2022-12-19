@@ -1,4 +1,5 @@
 using System;
+using DG.Tweening;
 using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts._Managers;
@@ -121,6 +122,15 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					transform.position = _grid.CellToWorld(CurrentPos);
 				}
 			}
+		}
+
+		public void ThrowToPosition(Vector3Int target)
+		{
+			//TODO: Add to utilities class and create coroutine to prevent movement while playing animation
+			transform.DOJump(target, .5f, 1, .5f);
+			//transform.position = target;
+			SetPosition(target);
+			transform.SetParent(null);
 		}
 		public void SetGrabbedBy(Transform grabber)
 		{

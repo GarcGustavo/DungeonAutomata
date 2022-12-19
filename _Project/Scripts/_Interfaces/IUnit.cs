@@ -21,5 +21,6 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 		public void Consume(ItemUnit itemUnit);
 		public void Equip(ItemUnit itemUnit);
 		void SetGrabbedBy(Transform grabber);
+		void ThrowToPosition(Vector3Int target);
 	}
 }
