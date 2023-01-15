@@ -10,6 +10,7 @@ using DungeonAutomata._Project.Scripts.CommandSystem.Commands;
 using DungeonAutomata._Project.Scripts.Controllers;
 using DungeonAutomata._Project.Scripts.Data;
 using UnityEngine;
+using UnityEngine.Diagnostics;
 using UnityEngine.Tilemaps;
 using Random = System.Random;
 using static DungeonAutomata._Project.Scripts._Common.GridUtils;
@@ -123,6 +124,10 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				Hunger++;
 				Thirst++;
 			}
+			else
+			{
+				_eventManager.InvokeUnitAction(this);
+			}
 		}
 
 		private void PaintCells(List<Vector3Int> cells, Color color)
@@ -188,14 +193,23 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			Debug.Log("Throw at: " + target);
 			//TODO: Add to utilities class and create coroutine to prevent movement while playing animation
-			transform.DOJump(target, .5f, 1, .5f);
+			//transform.DOJump(target, 1f, 1, .5f);
 			//transform.position = target;
+			StartCoroutine(ThrowAnimation(target));
+		}
+
+		private IEnumerator ThrowAnimation(Vector3Int target)
+		{
+			transform.DOJump(target, 1f, 1, .5f);
+			//transform.DOMove(target, .5f);
+			yield return CommonUtils.GetWaitForSeconds(.5f);
 			transform.SetParent(null);
 			CanMove = true;
 			CurrentPos = target;
 			SetPosition(target);
 			_mapManager.UpdateCell(_cellMap[CurrentPos.x, CurrentPos.y]);
 		}
+		
 		public void SetGrabbedBy(Transform grabber)
 		{
 			transform.position = grabber.position + Vector3.up/4 + Vector3.back/2;
