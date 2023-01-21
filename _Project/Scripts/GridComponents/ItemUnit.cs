@@ -53,11 +53,17 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		
 		public void Use(Vector3Int target)
 		{
+			var cellMap = _mapManager.GetCellMap();
 			switch (ItemType)
 			{
 				//Use events to notify target unless consumable, in which case target is unit using item
 				case ItemType.Consumable:
-					//_mapManager.GetCellMap()[target.x, target.y].Occupant;
+					var targetCell = cellMap[target.x, target.y];
+					var occupant = targetCell.Occupant;
+					if (occupant != null)
+					{
+						//occupant.Consume(this);
+					}
 					break;
 				case ItemType.Equipment:
 					// Equip item on target

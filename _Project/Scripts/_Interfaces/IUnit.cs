@@ -18,9 +18,10 @@ namespace DungeonAutomata._Project.Scripts._Interfaces
 		public void Attack(IUnit source, IUnit target);
 		public void Damage(int dmg);
 		public void Die();
-		public void Consume(ItemUnit itemUnit);
+		//public void Consume(ItemUnit itemUnit);
 		public void Equip(ItemUnit itemUnit);
 		void SetGrabbedBy(Transform grabber);
 		void ThrowToPosition(Vector3Int target);
+		//void ModifyStats(StatsData stats);
 	}
 }
