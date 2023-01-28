@@ -4,24 +4,24 @@ using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts.Utilities.ObjectPooling
 {
-    public class ObjectPool<T> : IPool<T> where T : MonoBehaviour, IPoolable<T>
+    public class ObjectPool<T> : IPool<T> where T : MonoBehaviour, IPoolObject<T>
     {
         public ObjectPool(GameObject pooledObject, int numToSpawn = 0)
         {
-            this.prefab = pooledObject;
+            prefab = pooledObject;
             Spawn(numToSpawn);
         }
 
         public ObjectPool(GameObject pooledObject, Action<T> pullObject, Action<T> pushObject, int numToSpawn = 0)
         {
-            this.prefab = pooledObject;
+            prefab = pooledObject;
             this.pullObject = pullObject;
             this.pushObject = pushObject;
             Spawn(numToSpawn);
         }
 
-        private System.Action<T> pullObject;
-        private System.Action<T> pushObject;
+        private Action<T> pullObject;
+        private Action<T> pushObject;
         private Stack<T> pooledObjects = new Stack<T>();
         private GameObject prefab;
         public int pooledCount
@@ -105,17 +105,5 @@ namespace DungeonAutomata._Project.Scripts.Utilities.ObjectPooling
                 t.gameObject.SetActive(false);
             }
         }
-    }
-
-    public interface IPool<T>
-    {
-        T Pull();
-        void Push(T t);
-    }
-
-    public interface IPoolable<T>
-    {
-        void Initialize(System.Action<T> returnAction);
-        void ReturnToPool();
     }
 }

@@ -36,7 +36,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities.ObjectPooling
 		public void Spawn()
 		{
 			int random = Random.Range(0, 3);
-			Vector3 position = Random.insideUnitSphere * range + this.transform.position;
+			Vector3 position = Random.insideUnitSphere * range + transform.position;
 			GameObject prefab;
 
 			switch (random)

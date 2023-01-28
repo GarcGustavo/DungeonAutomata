@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts.Utilities.ObjectPooling
 {
-	public class PoolObject : MonoBehaviour, IPoolable<PoolObject>
+	public class PoolObject : MonoBehaviour, IPoolObject<PoolObject>
 	{
 		private Action<PoolObject> returnToPool;
 
@@ -15,7 +15,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities.ObjectPooling
 		public void Initialize(Action<PoolObject> returnAction)
 		{
 			//cache reference to return action
-			this.returnToPool = returnAction;
+			returnToPool = returnAction;
 		}
 
 		public void ReturnToPool()
