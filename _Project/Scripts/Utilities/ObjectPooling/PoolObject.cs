@@ -21,7 +21,7 @@ namespace DungeonAutomata._Project.Scripts.Utilities.ObjectPooling
 		public void ReturnToPool()
 		{
 			//invoke and return this object to pool
-			returnToPool?.Invoke(this);
+			returnToPool?.Invoke(this); 
 		}
 	}
 }
