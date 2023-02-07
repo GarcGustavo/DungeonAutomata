@@ -2,11 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DungeonAutomata._Project.Scripts._Managers;
+using DungeonAutomata._Project.Scripts.DialogueSystem;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class DialoguePanel : MonoBehaviour
+public class DialoguePanel : MonoBehaviour, IPanel
 {
     private Queue<string> _dialogueLines;
     private Queue<Sprite> _dialogueSprites;
@@ -22,7 +23,13 @@ public class DialoguePanel : MonoBehaviour
         _text = GetComponentInChildren<TMP_Text>();
     }
     
-    public void OpenDialogue(DialogueData dialogueData)
+    public void OpenPanel(string dialogueString)
+    {
+        _text.text = dialogueString;
+        _isOpen = true;
+    }
+    
+    public void OpenPanel(DialogueData dialogueData)
     {
         foreach (var line in dialogueData.dialogue)
         {
@@ -52,12 +59,6 @@ public class DialoguePanel : MonoBehaviour
         _text.text = _dialogueLines.Dequeue();
         if(_dialogueSprites.Count > 0)
             _portrait.sprite = _dialogueSprites.Dequeue();
-    }
-    
-    public void ShowDialogueBark()
-    {
-        //TODO: Implement bark functionality
-        _text.text = "";
     }
     
 }

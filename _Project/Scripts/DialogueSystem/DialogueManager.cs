@@ -42,7 +42,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			if(_dialoguePanel.gameObject.activeInHierarchy)
 				return;
 			_dialoguePanel.gameObject.SetActive(true);
-			_dialoguePanel.OpenDialogue(dialogueData);
+			_dialoguePanel.OpenPanel(dialogueData);
 		}
 		
 		private void CloseDialoguePanel()

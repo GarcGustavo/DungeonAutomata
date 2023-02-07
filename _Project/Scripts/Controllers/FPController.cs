@@ -8,7 +8,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Rigidbody))]
 public class FPController : MonoBehaviour
 {
-
+    private IActor _currentActor;
     private float speed = 1.0f;
     private float m_MovX;
     private float m_MovY;
@@ -140,6 +140,7 @@ public class FPController : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.E))
                 {
                     actor.TriggerDialogue();
+                    _currentActor = actor;
                     _interacting = true;
                 }
             }
@@ -147,6 +148,21 @@ public class FPController : MonoBehaviour
         else
         {
             interactionImage.enabled = false;
+        }
+    }
+    
+    private void ReceiveInput()
+    {
+        
+        if (Input.GetKeyDown(KeyCode.E) && !interactionImage.enabled)
+        {
+            Debug.Log("E pressed");
+        }
+        if (Input.GetKeyDown(KeyCode.E) && _interacting)
+        {
+            Debug.Log("E released");
+            //TODO: Invoke dialogue input event
+            _interacting = false;
         }
     }
 
