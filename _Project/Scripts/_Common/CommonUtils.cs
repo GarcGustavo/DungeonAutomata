@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using DungeonAutomata._Project.Scripts.DialogueSystem;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -78,5 +79,24 @@ namespace DungeonAutomata._Project.Scripts._Common
 			popupPosition += offset;
 			return popupPosition;
 		}
+		public static IActor CastInteractionRay(Vector3 start, Vector3 direction, int interactableLayerMask)
+		{
+			Ray ray = new Ray(start, direction);
+			Debug.DrawLine(ray.origin, ray.origin + ray.direction * 100, Color.red);
+		
+			RaycastHit hit;
+			if (Physics.Raycast(ray, out hit, interactableLayerMask))
+			{
+				var hitObject = hit.transform.gameObject;
+				var actor = hitObject.GetComponent<IActor>();
+				if (actor != null)
+				{
+					Debug.Log("Hit " + actor);
+					return actor;
+				}
+			}
+			return null;
+		}
+		
 	}
 }

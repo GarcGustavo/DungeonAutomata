@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: DialogueExample
   m_EditorClassIdentifier: 
   dialogue:
-  - hello
-  - line 1
-  - line 2
-  - line 3
-  - final line
+  - Hello. This is an example conversation.
+  - Look at me go!
+  - I love being a cube!
+  - The portraits can change alongside the text too!
+  - Goodbye!
   sprites:
-  - {fileID: 21300002, guid: 358b5d9f23bc9413e87c9948acc67ee1, type: 3}
-  - {fileID: 21300012, guid: 358b5d9f23bc9413e87c9948acc67ee1, type: 3}
-  - {fileID: 21300008, guid: 358b5d9f23bc9413e87c9948acc67ee1, type: 3}
-  - {fileID: 21300006, guid: 358b5d9f23bc9413e87c9948acc67ee1, type: 3}
-  - {fileID: 21300000, guid: c40bc125564bb7c4fb45238ada33b70d, type: 3}
+  - {fileID: 21300000, guid: 86f44df0003d6394294473781f910999, type: 3}
+  - {fileID: 21300000, guid: 2f4a220f0f6a2114794f4fc1c16454ef, type: 3}
+  - {fileID: 21300000, guid: fb29ecf76124fbc4e9f3283ffff8447d, type: 3}
+  - {fileID: 21300000, guid: eb8bf07088813d14cb1aae6de8644ba6, type: 3}
+  - {fileID: 21300000, guid: fb29ecf76124fbc4e9f3283ffff8447d, type: 3}

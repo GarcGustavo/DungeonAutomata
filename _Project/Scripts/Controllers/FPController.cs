@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DungeonAutomata._Project.Scripts._Common;
+using DungeonAutomata._Project.Scripts._Managers;
 using DungeonAutomata._Project.Scripts.DialogueSystem;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +10,7 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Rigidbody))]
 public class FPController : MonoBehaviour
 {
+    private DialogueManager _dialogueManager;
     private IActor _currentActor;
     private float speed = 1.0f;
     private float m_MovX;
@@ -38,30 +41,18 @@ public class FPController : MonoBehaviour
 
     private void Start()
     {
+        _dialogueManager = DialogueManager.Instance;
         interactionImage.enabled = false;
         _cameraTransform = _camera.transform;
+        DialoguePanel.OnDialogueEnd += () => _interacting = false;
     }
 
     // Update is called once per frame
     public void FixedUpdate()
     {
-
-        m_MovX = Input.GetAxis("Horizontal");
-        m_MovY = Input.GetAxis("Vertical");
-
-        m_moveHorizontal = transform.right * m_MovX;
-        m_movVertical = transform.forward * m_MovY;
-
-        m_velocity = (m_moveHorizontal + m_movVertical).normalized * speed;
-
-        //mouse movement 
-        m_yRot = Input.GetAxisRaw("Mouse X");
-        m_rotation = new Vector3(0, m_yRot, 0) * m_lookSensitivity;
-
-        m_xRot = Input.GetAxisRaw("Mouse Y");
-        m_cameraRotation = new Vector3(m_xRot, 0, 0) * m_lookSensitivity;
-
         //move the actual player here
+        if (_interacting)
+            return;
         if (m_velocity != Vector3.zero)
         {
             m_Rigid.MovePosition(m_Rigid.position + m_velocity * Time.fixedDeltaTime);
@@ -75,12 +66,19 @@ public class FPController : MonoBehaviour
 
         if (_camera != null)
         {
-            //negate this value so it rotates like a FPS not like a plane
+            //negate this value so it rotates like an FPS not like a plane
             _camera.transform.Rotate(-m_cameraRotation);
         }
-
+    }
+    
+    public void Update()
+    {
+        ReceiveInput();
+        if (!_interacting)
+        {
+            CheckInteraction();
+        }
         InternalLockUpdate();
-        CastInteractionRay();
     }
 
     //controls the locking and unlocking of the mouse
@@ -117,33 +115,21 @@ public class FPController : MonoBehaviour
         Cursor.visible = true;
     }
     
-    private void CastInteractionRay()
+    private void CheckInteraction()
     {
-        // Get the mouse position in screen space
-        Vector3 mousePos = Input.mousePosition;
-        
-        // Convert the mouse position to world space
-        //Ray ray = Camera.main.ScreenPointToRay(mousePos);
-        //Ray ray = _camera.ViewportPointToRay(mousePos);
-        Ray ray = new Ray(_cameraTransform.position, _cameraTransform.forward);
-        Debug.DrawLine(ray.origin, ray.origin + ray.direction * 100, Color.red);
-        
+        var position = _cameraTransform.position;
+        var forward = _cameraTransform.forward;
+        var actor = CommonUtils.CastInteractionRay(position, forward, interactableLayerMask);
+        Debug.DrawLine(position, position + forward * 100, Color.red);
         RaycastHit hit;
-        if (Physics.Raycast(ray, out hit, interactableLayerMask))
+        //if (Physics.Raycast(ray, out hit, interactableLayerMask))
+        if (actor != null && !_interacting)
         {
-            var hitObject = hit.transform.gameObject;
-            var actor = hitObject.GetComponent<IActor>();
-            if (actor != null)
-            {
-                Debug.Log("Hit an actor");
-                interactionImage.enabled = true;
-                if (Input.GetKeyDown(KeyCode.E))
-                {
-                    actor.TriggerDialogue();
-                    _currentActor = actor;
-                    _interacting = true;
-                }
-            }
+            //var hitObject = hit.transform.gameObject;
+            //var actor = hitObject.GetComponent<IActor>();
+            Debug.DrawLine(position, position + forward * 100, Color.green);
+            interactionImage.enabled = true;
+            _currentActor = actor;
         }
         else
         {
@@ -153,16 +139,30 @@ public class FPController : MonoBehaviour
     
     private void ReceiveInput()
     {
+        m_MovX = Input.GetAxis("Horizontal");
+        m_MovY = Input.GetAxis("Vertical");
+
+        m_moveHorizontal = transform.right * m_MovX;
+        m_movVertical = transform.forward * m_MovY;
+
+        m_velocity = (m_moveHorizontal + m_movVertical).normalized * speed;
+
+        //mouse movement 
+        m_yRot = Input.GetAxisRaw("Mouse X");
+        m_xRot = Input.GetAxisRaw("Mouse Y");
+        m_rotation = new Vector3(0, m_yRot, 0) * m_lookSensitivity;
+        m_cameraRotation = new Vector3(m_xRot, 0, 0) * m_lookSensitivity;
         
-        if (Input.GetKeyDown(KeyCode.E) && !interactionImage.enabled)
-        {
-            Debug.Log("E pressed");
-        }
         if (Input.GetKeyDown(KeyCode.E) && _interacting)
         {
-            Debug.Log("E released");
-            //TODO: Invoke dialogue input event
-            _interacting = false;
+            Debug.Log("E pressed");
+            _dialogueManager.TriggerNextLine();
+        }
+        else if (Input.GetKeyDown(KeyCode.E) && !_interacting && _currentActor != null)
+        {
+            _currentActor.TriggerDialogue();
+            _interacting = true;
+            interactionImage.enabled = false;
         }
     }
 

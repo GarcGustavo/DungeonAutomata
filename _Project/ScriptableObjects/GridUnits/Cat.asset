@@ -15,7 +15,7 @@ MonoBehaviour:
   sprite: {fileID: 21300000, guid: 466467ed78292f5458fa0c0435718c82, type: 3}
   enemyName: Cat
   type: 0
-  description: agent of chaos
+  description: Agent of chaos, halbinger of doom.
   Level: 1
   Exp: 1
   Health: 1

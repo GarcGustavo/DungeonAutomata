@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Slime
   m_EditorClassIdentifier: 
   sprite: {fileID: 21300000, guid: 935c6d9c782c67d4b8ea46a4bd0a04ca, type: 3}
-  enemyName: slime
+  enemyName: Slime
   type: 0
-  description: looks weak
+  description: It got lost on its way to Dragon Quest...
   Level: 1
   Exp: 3
   Health: 5

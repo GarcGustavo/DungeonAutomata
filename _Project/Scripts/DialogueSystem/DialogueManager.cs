@@ -13,9 +13,14 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		{
 			//Singleton initialization
 			if (Instance == null)
+			{
 				Instance = this;
+				DontDestroyOnLoad(gameObject);
+			}
 			else
+			{
 				Destroy(gameObject);
+			}
 			
 			_dialoguePanel = GetComponentInChildren<DialoguePanel>();
 			_dialoguePanel.gameObject.SetActive(false);
@@ -32,7 +37,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 		}
 		
 		public static event Action OnDialogueInput;
-		public static void TriggerNextLine()
+		public void TriggerNextLine()
 		{
 			OnDialogueInput?.Invoke();
 		}

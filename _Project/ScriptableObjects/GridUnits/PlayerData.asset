@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sprite: {fileID: 21300000, guid: fd3ff652bb7f4c74280d5f3e4b7e7f68, type: 3}
   playerName: BasicPlayer
-  Health: 10
-  Mp: 5
+  Health: 25
+  Mp: 55
   Energy: 2
-  Level: 1
-  Exp: 0
-  Strength: 1
-  Dexterity: 1
-  Intelligence: 1
-  Luck: 1
+  Level: 17
+  Exp: 150
+  Strength: 7
+  Dexterity: 5
+  Intelligence: 2
+  Luck: 3

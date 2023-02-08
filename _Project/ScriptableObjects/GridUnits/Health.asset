@@ -64,4 +64,4 @@ MonoBehaviour:
   itemType: 0
   itemValue: 1
   itemAmount: 1
-  description: lorem ipsum
+  description: A small potion that restores 10 hp.
