@@ -1,6 +1,4 @@
-using DungeonAutomata._Project.Scripts._Managers;
-
-namespace DungeonAutomata._Project.Scripts.DialogueSystem
+namespace DungeonAutomata._Project.Scripts.DialogueSystem.Interfaces
 {
 	public interface IPanel
 	{

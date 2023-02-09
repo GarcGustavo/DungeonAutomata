@@ -2,7 +2,7 @@ using System.Collections;
 using DungeonAutomata._Project.Scripts._Interfaces;
 using DungeonAutomata._Project.Scripts.Data;
 using UnityEngine;
-using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
+using static DungeonAutomata._Project.Scripts.Utilities.Utils;
 
 namespace DungeonAutomata._Project.Scripts.CommandSystem.Commands
 {

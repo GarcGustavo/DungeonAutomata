@@ -4,7 +4,7 @@ using DungeonAutomata._Project.Scripts.Utilities;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static DungeonAutomata._Project.Scripts._Common.CommonUtils;
+using static DungeonAutomata._Project.Scripts.Utilities.Utils;
 
 namespace DungeonAutomata._Project.Scripts._Managers
 {

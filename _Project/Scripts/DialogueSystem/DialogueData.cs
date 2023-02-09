@@ -1,8 +1,6 @@
-using System;
 using UnityEngine;
-using UnityEngine.UI;
 
-namespace DungeonAutomata._Project.Scripts._Managers
+namespace DungeonAutomata._Project.Scripts.DialogueSystem
 {
 	[CreateAssetMenu(fileName = "Dialogue System", menuName = "Dialogue Data", order = 0)]
 	public class DialogueData : ScriptableObject

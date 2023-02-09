@@ -1,11 +1,11 @@
 using System.Collections.Generic;
-using DungeonAutomata._Project.Scripts.DialogueSystem;
+using DungeonAutomata._Project.Scripts.DialogueSystem.Interfaces;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace DungeonAutomata._Project.Scripts._Common
+namespace DungeonAutomata._Project.Scripts.Utilities
 {
-	public static class CommonUtils
+	public static class Utils
 	{
 		// Return or cache scene's main camera
 		private static Camera _camera;

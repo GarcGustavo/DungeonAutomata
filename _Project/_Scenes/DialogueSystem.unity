@@ -1228,8 +1228,8 @@ GameObject:
   - component: {fileID: 1041990576}
   - component: {fileID: 1041990575}
   - component: {fileID: 1041990574}
-  - component: {fileID: 1041990573}
   - component: {fileID: 1041990577}
+  - component: {fileID: 1041990578}
   m_Layer: 3
   m_Name: CubeActor
   m_TagString: Untagged
@@ -1237,19 +1237,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!65 &1041990573
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1041990572}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1041990574
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1299,7 +1286,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1041990572}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: -3103093557580486280, guid: 9b9d85650c2786b4988a83f3950f5b4e, type: 3}
 --- !u!4 &1041990576
 Transform:
   m_ObjectHideFlags: 0
@@ -1331,6 +1318,20 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b06ac1e74b461ee4fbbe9f8f52a6454c, type: 2}
   _barkData: {fileID: 11400000, guid: b06ac1e74b461ee4fbbe9f8f52a6454c, type: 2}
   _activeDialogue: {fileID: 11400000, guid: b06ac1e74b461ee4fbbe9f8f52a6454c, type: 2}
+--- !u!136 &1041990578
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1041990572}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  m_Radius: 0.49768776
+  m_Height: 1.2138968
+  m_Direction: 1
+  m_Center: {x: 0, y: -0.39845753, z: 0}
 --- !u!1 &1102451759
 GameObject:
   m_ObjectHideFlags: 0

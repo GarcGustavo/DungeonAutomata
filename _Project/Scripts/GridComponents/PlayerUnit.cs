@@ -125,7 +125,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				SetMoveState(false);
 				CurrentEnergy--;
 				Debug.Log("Energy remaining: " + CurrentEnergy);
-				yield return CommonUtils.GetWaitForSeconds(.05f);
+				yield return Utils.GetWaitForSeconds(.05f);
 				_eventManager.InvokePlayerAction();
 				_eventManager.InvokeTurnEnd();
 			}

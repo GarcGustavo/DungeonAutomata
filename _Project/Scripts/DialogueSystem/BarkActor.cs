@@ -1,3 +1,4 @@
+using DungeonAutomata._Project.Scripts.DialogueSystem.Interfaces;
 using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts.DialogueSystem

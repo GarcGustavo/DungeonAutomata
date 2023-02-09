@@ -14,6 +14,7 @@ using UnityEngine.Diagnostics;
 using UnityEngine.Tilemaps;
 using Random = System.Random;
 using static DungeonAutomata._Project.Scripts._Common.GridUtils;
+using Utils = DungeonAutomata._Project.Scripts.Utilities.Utils;
 
 namespace DungeonAutomata._Project.Scripts.GridComponents
 {
@@ -202,7 +203,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			transform.DOJump(target, 1f, 1, .5f);
 			//transform.DOMove(target, .5f);
-			yield return CommonUtils.GetWaitForSeconds(.5f);
+			yield return Utils.GetWaitForSeconds(.5f);
 			transform.SetParent(null);
 			CanMove = true;
 			CurrentPos = target;

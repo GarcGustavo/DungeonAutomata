@@ -1,8 +1,7 @@
 using System;
-using DungeonAutomata._Project.Scripts.DialogueSystem;
 using UnityEngine;
 
-namespace DungeonAutomata._Project.Scripts._Managers
+namespace DungeonAutomata._Project.Scripts.DialogueSystem
 {
 	public class DialogueManager : MonoBehaviour
 	{

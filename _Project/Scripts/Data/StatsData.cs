@@ -3,7 +3,7 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using static DungeonAutomata._Project.Scripts._Common.CommonTypes;
 
-namespace DungeonAutomata._Project.Scripts._Common
+namespace DungeonAutomata._Project.Scripts.Data
 {
 	/// <summary>
 	/// Create a new scriptable object to contain different stats for different units

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using DungeonAutomata._Project.Scripts._Managers;
+using DungeonAutomata._Project.Scripts.DialogueSystem.Interfaces;
 using UnityEngine;
 using UnityEngine.Events;
 
