@@ -35,6 +35,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		public string Description { get; set; }
 		public Vector3Int CurrentPos { get; set; }
 		public bool isGridUnit;
+		private FPSGridController _fpsGridController;
 		private GridController2D _gridController;
 		private TopDownController _topDownController;
 		public string UnitName { get; set; }

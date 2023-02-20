@@ -23,7 +23,6 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		//Using feedbacks from MoreMountains for movement effects
 		[SerializeField] private MMFeedbacks feedbacks;
-		private TopDownManager _turnManager;
 		private EventManager _eventManager;
 		private MapManager _mapManager;
 		private Grid _grid;
@@ -40,7 +39,6 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
 		private void Awake()
 		{
-			_turnManager = TopDownManager.Instance;
 			_eventManager = EventManager.Instance;
 			_mapManager = MapManager.Instance;
 			_unit = GetComponent<IUnit>();
