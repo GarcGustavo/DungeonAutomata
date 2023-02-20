@@ -66,7 +66,6 @@ namespace DungeonAutomata._Project.Editor
 		{
 			// load the scenes when the toolbar overlay is initially created
 			SceneSwitcher.LoadScenes();
-
 			// subscribe to the event where scene assets were potentially modified
 			EditorApplication.projectChanged += OnProjectChanged;
 		}
@@ -102,39 +101,30 @@ namespace DungeonAutomata._Project.Editor
 			tooltip = content.tooltip;
 			icon = content.image as Texture2D;
 
-			// hacky: the text element is the second one here so we can set the padding
-			//        but this is not really robust I think
 			ElementAt(1).style.paddingLeft = 5;
 			ElementAt(1).style.paddingRight = 5;
 
 			clicked += ToggleDropdown;
 
-			// keep track of panel events
 			RegisterCallback<AttachToPanelEvent>(OnAttachToPanel);
 			RegisterCallback<DetachFromPanelEvent>(OnDetachFromPanel);
 		}
 
 		protected virtual void OnAttachToPanel(AttachToPanelEvent evt)
 		{
-			// subscribe to the event where the play mode has changed
 			EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 
-			// subscribe to the event where scene assets were potentially modified
 			EditorApplication.projectChanged += OnProjectChanged;
 
-			// subscribe to the event where a scene has been opened
 			EditorSceneManager.sceneOpened += OnSceneOpened;
 		}
 
 		protected virtual void OnDetachFromPanel(DetachFromPanelEvent evt)
 		{
-			// unsubscribe from the event where the play mode has changed
 			EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
 
-			// unsubscribe from the event where scene assets were potentially modified
 			EditorApplication.projectChanged -= OnProjectChanged;
 
-			// unsubscribe from the event where a scene has been opened
 			EditorSceneManager.sceneOpened -= OnSceneOpened;
 		}
 
@@ -146,7 +136,6 @@ namespace DungeonAutomata._Project.Editor
 					SetEnabled(true);
 					break;
 				case PlayModeStateChange.EnteredPlayMode:
-					// don't allow switching scenes while in play mode
 					SetEnabled(false);
 					break;
 			}
@@ -154,13 +143,11 @@ namespace DungeonAutomata._Project.Editor
 
 		private void OnProjectChanged()
 		{
-			// update the dropdown label whenever the active scene has potentially be renamed
 			text = SceneManager.GetActiveScene().name;
 		}
 
 		private void OnSceneOpened(Scene scene, OpenSceneMode mode)
 		{
-			// update the dropdown label whenever a scene has been opened
 			text = scene.name;
 		}
 

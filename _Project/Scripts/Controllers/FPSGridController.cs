@@ -16,21 +16,19 @@ namespace DungeonAutomata._Project.Scripts.Controllers
     {
         private Camera _cam;
         private Player _player;
-        [SerializeField] private Grid grid;
-        [SerializeField] private bool canMove = true;        
-        [SerializeField] private float moveCD = .2f;
-
+        public Vector3Int GridPosition => _currentPosition;
         
-        private bool _isMoving;
-        private Tween _tween;
+        private Grid _grid;
+        [SerializeField] private bool isMoving;
+        [SerializeField] private Direction currentDirection = 0;
+        [SerializeField] private float moveCD = .1f;
         private Vector3Int _currentPosition;
         private Vector3Int _currentTarget;
-        private const float _speed = 4f;
-        private const float _turnSpeed = 4f;
-        private const float _headBob = 0.1f;
-        private Direction _currentDirection = 0;
-        private readonly float _turnCD = 1;
-        private readonly Vector3 _centerOffset = new Vector3(.5f, 1f, .5f);
+        [SerializeField] private float _speed = 4f;
+        [SerializeField] private float _turnSpeed = 4f;
+        [SerializeField] private float _headBob = 0.1f;
+        [SerializeField] private Vector3 _centerOffset = new Vector3(.5f, 0f, .5f);
+        private Tween _tween;
         
         private enum Direction
         {
@@ -42,6 +40,10 @@ namespace DungeonAutomata._Project.Scripts.Controllers
         
         private void Awake()
         {
+            _grid = GetComponent<Grid>();
+            _grid.cellSize = new Vector3(1, 1, 1);
+            _grid.cellLayout = GridLayout.CellLayout.Rectangle;
+            _grid.cellSwizzle = GridLayout.CellSwizzle.XZY;
             //_manager = TopDownManager.Instance;
             //_eventManager = EventManager.Instance;
             //_mapManager = MapManager.Instance;
@@ -51,9 +53,11 @@ namespace DungeonAutomata._Project.Scripts.Controllers
         private void Start()
         {
             _cam = Camera.main;
-            _currentPosition = grid.WorldToCell(transform.position);
+            _currentPosition = _grid.WorldToCell(transform.position);
             _currentTarget = _currentPosition;
-            _currentDirection = Direction.North;
+            currentDirection = Direction.North;
+            isMoving = false;
+            _tween = transform.DOMove(_grid.CellToWorld(_currentPosition), 0f);
         }
 
         private void Update()
@@ -64,7 +68,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
         public void SetPosition(Vector3Int position)
         {
 	        _currentPosition = position;
-	        transform.position = grid.CellToWorld(_currentPosition);
+	        transform.position = _grid.CellToWorld(_currentPosition);
 	        //TODO: replace w/ fps events
 	        //_eventManager.InvokeCellUpdate(previousCell);
 	        //_eventManager.InvokeCellUpdate(currentCell);
@@ -72,87 +76,83 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
         public void GetMovementInput()
         {
-            if (_isMoving) return;
-            if (Input.GetButton("Up"))
+            if (_tween.IsPlaying()) return;
+            
+            var horizontal = Input.GetAxisRaw("Horizontal");
+            var vertical = Input.GetAxisRaw("Vertical");
+
+            if (vertical > 0)
             {
-                _isMoving = true;
                 StartCoroutine(MovePlayerToCell());
             }
-            else if (Input.GetButtonDown("Down"))
+            else if (vertical < 0)
             {
-                var direction = ((int)_currentDirection + 2) % 4;
+                var direction = ((int)currentDirection + 2) % 4;
+                currentDirection = (Direction) direction;
                 //_currentDirection = (TopDownManager.Direction) direction;
                 //_player._currentDirection = _currentDirection;
                 //Debug.Log("Direction: " + _currentDirection);
                 
-                _isMoving = true;
                 StartCoroutine(RotatePlayer(Vector3.down * 180));
             }
-            else if (Input.GetButtonDown("Left"))
+            else if (horizontal < 0)
             {
-                var direction = ((int) _currentDirection + 3) % 4;
-
+                var direction = ((int) currentDirection + 3) % 4;
+                currentDirection = (Direction) direction;
                 //_currentDirection = (TopDownManager.Direction) direction;
                 //_player._currentDirection = _currentDirection;
                 //Debug.Log("Direction: " + _currentDirection);
-                _isMoving = true;
                 StartCoroutine(RotatePlayer(Vector3.down * 90));
             }
-            else if (Input.GetButtonDown("Right"))
+            else if (horizontal > 0)
             {
-                var direction = ((int)_currentDirection + 1)%4;
-                
+                var direction = ((int)currentDirection + 1)%4;
+                currentDirection = (Direction) direction;
                 //_currentDirection = (TopDownManager.Direction) direction;
                 //_player._currentDirection = _currentDirection;
                 //Debug.Log("Direction: " + _currentDirection);
-                _isMoving = true;
                 StartCoroutine(RotatePlayer(Vector3.up * 90));
-            }
-            else if (Input.GetButton("Fire1"))
-            {
-            }
-            else if (Input.GetButtonDown("Fire2"))
-            {
-                
             }
         }
         private IEnumerator RotatePlayer(Vector3 rotation)
         {
-            if (!_isMoving) yield break;
-            
-            transform.DORotate(transform.eulerAngles + rotation, 1 / _turnSpeed, RotateMode.Fast);
-            yield return new WaitForSeconds(_turnCD);
-            _isMoving = false;
+            if (_tween.IsPlaying())
+            {
+                _tween.Kill();
+            }
+            _tween = transform.DORotate(transform.eulerAngles + rotation, 1 / _turnSpeed, RotateMode.Fast);
+            yield return new WaitForSeconds(moveCD);
         }
     
         private IEnumerator MovePlayerToCell()
         {
-            if (!_isMoving) yield break;
-            
-            _currentTarget = _currentDirection switch
+            if (_tween.IsPlaying())
             {
-                Direction.North => _currentPosition + Vector3Int.up,
+                _tween.Kill();
+            }
+            _currentTarget = currentDirection switch
+            {
+                Direction.North => _currentPosition + Vector3Int.forward,
                 Direction.East => _currentPosition + Vector3Int.right,
-                Direction.South => _currentPosition + Vector3Int.down,
+                Direction.South => _currentPosition + Vector3Int.back,
                 Direction.West => _currentPosition + Vector3Int.left,
                 _ => _currentPosition
             };
-            var cell = Vector3.up;
+            
+            var cell = Vector3.zero;
             if (CheckCell(cell))
             {
-                var bodyPosition = new Vector3Int(_currentTarget.x, _currentTarget.z, _currentTarget.y);
-                transform.DOMove(bodyPosition + _centerOffset,
-                    1 / _speed, false);
+                _tween = transform.DOMove(_currentTarget + _centerOffset, 1 / _speed, false);
+                _currentPosition = _currentTarget;
             }
             else
             {
                 _cam.DOShakePosition(strength: 0.1f, duration: .2f, randomness: 45f, vibrato: 45, fadeOut: true);
-                _cam.transform.DOLocalMove(Vector3.zero, .1f, false);
+                _tween = _cam.transform.DOLocalMove(Vector3.zero, .1f, false);
             }
-                //_playerUIManager.LogAction.Invoke("Moved to cell " + _currentPosition.x + ", " + _currentPosition.y);
+            //_playerUIManager.LogAction.Invoke("Moved to cell " + _currentPosition.x + ", " + _currentPosition.y);
             //_manager.UpdateTurn();
-            yield return new WaitForSeconds(_turnCD);
-            _isMoving = false;
+            yield return new WaitForSeconds(moveCD);
         }
         private bool CheckCell(Vector3 cellPos)
         {
@@ -226,13 +226,13 @@ namespace DungeonAutomata._Project.Scripts.Controllers
     
         private IEnumerator PlayerAttack(Vector3Int targetCell)
         {
-            if (!_isMoving) yield break;
+            if (!isMoving) yield break;
             
             //_playerUIManager.LogAction.Invoke("Attacked cell " + targetCell.x + ", " + targetCell.y);
             //_player.activeWeapon?.Attack(targetCell);
             //_manager.UpdateTurn();
-            yield return new WaitForSeconds(_turnCD);
-            _isMoving = false;
+            yield return new WaitForSeconds(moveCD);
+            isMoving = false;
         }
         
         //Not used due to disorientation
