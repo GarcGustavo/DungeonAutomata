@@ -83,8 +83,8 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			_mapManager.InitializeMap();
 			if (_populateOnLoad)
 			{
-				_mapManager.PopulateGridMap();
 				_player = GetPlayer();
+				_mapManager.PopulateGridMap();
 			}
 			_eventManager.InvokeUpdateHUD();
 			//UpdateGameState(_state);

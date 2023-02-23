@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DungeonAutomata._Project.Scripts._Common;
 using DungeonAutomata._Project.Scripts._Interfaces;
@@ -12,11 +13,16 @@ using Random = UnityEngine.Random;
 
 namespace DungeonAutomata._Project.Scripts._Managers
 {
+	public enum MapType
+	{
+		TopDown,
+		FirstPerson
+	}
 	[RequireComponent(typeof(MapGenerator))]
 	public class MapManager : MonoBehaviour
 	{
 		public static MapManager Instance { get; private set; }
-		
+		[SerializeField] private MapType mapType;
 		[SerializeField] private Grid grid;
 		[SerializeField] private Tilemap highLightMap;
 		[SerializeField] private CellData highLightTile;
@@ -107,13 +113,21 @@ namespace DungeonAutomata._Project.Scripts._Managers
 			//highLightMap.ClearAllTiles();
 			//highLightMap.RefreshAllTiles();
 			var cellBounds = _tileMap.cellBounds;
-			_playerMap = new int[cellBounds.size.x, cellBounds.size.y];
-			_enemyMap = new int[cellBounds.size.x, cellBounds.size.y];
-			_itemMap = new int[cellBounds.size.x, cellBounds.size.y];
-			_foodMap = new int[cellBounds.size.x, cellBounds.size.y];
-			_waterMap = new int[cellBounds.size.x, cellBounds.size.y];
-			_preyMap = new int[cellBounds.size.x, cellBounds.size.y];
-			_predatorMap = new int[cellBounds.size.x, cellBounds.size.y];
+			var x = cellBounds.size.x;
+			var y = cellBounds.size.y;
+			
+			if (mapType == MapType.FirstPerson)
+			{
+				y = cellBounds.size.z;
+			}
+			
+			_playerMap = new int[x, y];
+			_enemyMap = new int[x, y];
+			_itemMap = new int[x, y];
+			_foodMap = new int[x, y];
+			_waterMap = new int[x, y];
+			_preyMap = new int[x, y];
+			_predatorMap = new int[x, y];
 		}
 
 		[Button]

@@ -14,8 +14,6 @@ using UnityEngine;
 
 namespace DungeonAutomata._Project.Scripts.GridComponents
 {
-	[RequireComponent(typeof(GridController2D))]
-	[RequireComponent(typeof(DraggableController))]
 	public class PlayerUnit : MonoBehaviour, IUnit, ICombatUnit
 	{
 		public enum ControlType
@@ -25,6 +23,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		}
 		[SerializeField] private ControlType _controlType = ControlType.TurnBased;
 		[SerializeField] private PlayerData playerData;
+		[SerializeField] private MapType _mapType = MapType.TopDown;
 		private InventoryManager _inventory;
 		private TopDownManager _manager;
 		private EventManager _eventManager;
@@ -59,16 +58,30 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		private void Awake()
 		{
-			_gridController = GetComponent<GridController2D>();
-			var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-			spriteRenderer.sprite = playerData.sprite;
 			_manager = TopDownManager.Instance;
 			_eventManager = EventManager.Instance;
 			_inventory = InventoryManager.Instance;
 			_mapManager = MapManager.Instance;
-			_eventManager.OnPlayerDamaged += Damage;
+			
+			if (_mapType == MapType.TopDown)
+			{
+				_gridController = GetComponent<GridController2D>();
+				var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+				spriteRenderer.sprite = playerData.sprite;
+			}
+			else if (_mapType == MapType.FirstPerson)
+			{
+				_fpsGridController = GetComponent<FPSGridController>();
+			}
+			
+			
 			//_eventManager.OnPlayerAction += UseEnergy;
 			CurrentPos = new Vector3Int();
+		}
+
+		private void Start()
+		{
+			_eventManager.OnPlayerDamaged += Damage;
 			UnitName = playerData.name;
 		}
 
@@ -95,9 +108,17 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 			
 			Hunger = 0;
 			Thirst = 0;
+
 			_cellMap = _mapManager.GetCellMap();
 			
-			_gridController.InitializeGrid();
+			if (_mapType == MapType.FirstPerson)
+			{
+				_fpsGridController.InitializeGrid(_mapManager.GetCellMap());
+			}
+			else
+			{
+				_gridController.InitializeGrid();
+			}
 			UpdateDescription();
 			SetMoveState(true);
 		}
@@ -147,13 +168,15 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		{
 			Debug.Log("Move state: " + isMoving);
 			_inputEnabled = isMoving;
-			//_controller.CanMove = isMoving;
 		}
 
 		public void MoveTurnBased(Vector3Int position)
 		{
 			Debug.Log("Player moving to: " + position + " from: " + CurrentPos);
-			_gridController.MoveUnit(position);
+			if(_mapType == MapType.TopDown)
+				_gridController.MoveUnit(position);
+			else if(_mapType == MapType.FirstPerson)
+				StartCoroutine(_fpsGridController.MovePlayerToCell()); 
 		}
 
 		private void MoveTopDown(Vector3 input)
@@ -271,21 +294,27 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 					else if (Input.GetKey(KeyCode.S) && !Input.GetKeyUp(KeyCode.S))
 					{
 						var direction = zAxisUp ? Vector3Int.back : Vector3Int.down;
-						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
-						StartCoroutine(UseEnergy());
-						//Move(CurrentTile + direction);
+						if (_mapType == MapType.TopDown)
+						{
+							_manager.RegisterCommand(new MoveCommand(this, CurrentPos + direction));
+							StartCoroutine(UseEnergy());
+						}
 					}
 					else if (Input.GetKey(KeyCode.A) && !Input.GetKeyUp(KeyCode.A))
 					{
-						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.left));
-						StartCoroutine(UseEnergy());
-						//Move(CurrentTile + Vector3Int.left);
+						if (_mapType == MapType.TopDown)
+						{
+							_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.left));
+							StartCoroutine(UseEnergy());
+						}
 					}
 					else if (Input.GetKey(KeyCode.D) && !Input.GetKeyUp(KeyCode.D))
 					{
-						_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.right));
-						StartCoroutine(UseEnergy());
-						//Move(CurrentTile + Vector3Int.right);
+						if (_mapType == MapType.TopDown)
+						{
+							_manager.RegisterCommand(new MoveCommand(this, CurrentPos + Vector3Int.right));
+							StartCoroutine(UseEnergy());
+						}
 					}
 					else if (Input.GetKeyDown(KeyCode.Tab))
 					{

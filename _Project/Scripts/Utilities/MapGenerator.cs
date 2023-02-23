@@ -114,7 +114,6 @@ namespace DungeonAutomata._Project.Scripts.Utilities
 			var connectedRooms = new List<List<Vector3Int>>();
 			foreach (var room in foundRooms)
 			{
-				
 				var currentRoom = room;
 				var random = new Random();
 				var idx = random.Next(foundRooms.Count);

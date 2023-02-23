@@ -329,6 +329,7 @@ GameObject:
   m_Component:
   - component: {fileID: 362732918767091607}
   - component: {fileID: 362732918767091606}
+  - component: {fileID: 8070239229506227849}
   m_Layer: 0
   m_Name: FPGridPlayer
   m_TagString: Untagged
@@ -365,10 +366,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4a178f68a88442798190b7626846fc0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _grid: {fileID: 0}
   isMoving: 0
   currentDirection: 0
   moveCD: 0.05
   _speed: 4
   _turnSpeed: 4
   _headBob: 0.1
-  _centerOffset: {x: 0.5, y: 0, z: 0.5}
+  _centerOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &8070239229506227849
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 362732918767091604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73b50dde3751424c83a4df0e001bfb8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _controlType: 1
+  playerData: {fileID: 11400000, guid: 67f9d512c34226d4899f811da60f3a67, type: 2}
+  _mapType: 1
+  isGridUnit: 0
+  zAxisUp: 0
