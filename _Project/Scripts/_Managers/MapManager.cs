@@ -340,6 +340,7 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				{
 					_playerSpawnPoint = GridUtils.GetRandomPosition(room);
 					_startingRoom = room;
+					Debug.Log("Player spawn point: " + _playerSpawnPoint);
 				}
 				else
 					break;
@@ -438,7 +439,77 @@ namespace DungeonAutomata._Project.Scripts._Managers
 				_items.Add(item);
 			}
 		}
-		
+
+		//TODO: Refactor and move logic out of this method
+		/*
+		private bool IsValidCell(CellData cell)
+		{
+			//TODO: optimize and organize
+			if (cell.Occupant != null)
+			{
+				//Enemy collision logic
+				if (_unit.GetType() == typeof(EnemyUnit) )
+				{
+					//Rework later into command pattern and AoE SO's
+					if (cell.Occupant.GetType() == typeof(PlayerUnit)
+					    || cell.Occupant.GetType() == typeof(EnemyUnit))
+					{
+						var positions = new List<Vector3Int>();
+						positions.Add(cell.Occupant.CurrentPos);
+						//Debug.Log("Attacking: " + cell.gridPosition);
+						_unitSpriteRenderer.flipX =  cell.gridPosition.x < _currentPosition.x;
+						StartCoroutine(GridUtils.PunchToPosition(_unitSpriteTransform, 
+							_currentPosition, 
+							cell.gridPosition, 
+							moveCD));
+						_eventManager.InvokeAttack(_unit, positions);
+						return false;
+					}
+				}
+				
+				//Player collision logic
+				if (_unit.GetType() == typeof(PlayerUnit))
+				{
+					Debug.Log("Picking up item: " + cell.gridPosition);
+					if (cell.Occupant.GetType() == typeof(ItemUnit))
+					{
+						_eventManager.InvokePickup(cell.Occupant as IItem);
+						//Hide sprite
+						cell.Occupant.Die();
+						cell.Occupant = null;
+						cell.isWalkable = true;
+						return true;
+					}
+					//Rework later into command pattern and AoE SO's
+					if (cell.Occupant.GetType() == typeof(EnemyUnit))
+					{
+						var positions = new List<Vector3Int>();
+						positions.Add(cell.Occupant.CurrentPos);
+						Debug.Log("Attacking: " + cell.gridPosition);
+						_unitSpriteRenderer.flipX =  cell.gridPosition.x < _currentPosition.x;
+						StartCoroutine(GridUtils.PunchToPosition(_unitSpriteTransform, 
+							_currentPosition, 
+							cell.gridPosition, 
+							moveCD));
+						_eventManager.InvokeAttack(_unit, positions);
+						//Replace with actual feedbacks/animations later);
+						return false;
+					}
+					if (cell.cellType == CellTypes.Exit)
+					{
+						_eventManager.InvokePlayerExit();
+						return false;
+					}
+				}
+			}
+
+			if (cell.isWalkable && cell.Occupant == null)
+			{
+				return true;
+			}
+			return false;
+		}
+		*/
 		#endregion
 
 		#region GETS

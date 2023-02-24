@@ -146,7 +146,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 				//Move state updated on player turn start
 				SetMoveState(false);
 				CurrentEnergy--;
-				Debug.Log("Energy remaining: " + CurrentEnergy);
+				//Debug.Log("Energy remaining: " + CurrentEnergy);
 				yield return Utils.GetWaitForSeconds(.05f);
 				_eventManager.InvokePlayerAction();
 				_eventManager.InvokeTurnEnd();
@@ -166,17 +166,25 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 
 		public void SetMoveState(bool isMoving)
 		{
-			Debug.Log("Move state: " + isMoving);
+			//Debug.Log("Move state: " + isMoving);
 			_inputEnabled = isMoving;
 		}
 
 		public void MoveTurnBased(Vector3Int position)
 		{
-			Debug.Log("Player moving to: " + position + " from: " + CurrentPos);
+			Debug.Log("Player: [" + CurrentPos + "]-->[" + position + "]");
 			if(_mapType == MapType.TopDown)
+			{
 				_gridController.MoveUnit(position);
-			else if(_mapType == MapType.FirstPerson)
-				StartCoroutine(_fpsGridController.MovePlayerToCell()); 
+			}
+			else if (_mapType == MapType.FirstPerson)
+			{
+				var newPos = CurrentPos;
+				newPos.y = 0;
+				CurrentPos = newPos;
+				StartCoroutine(_fpsGridController.MovePlayerToCell());
+				
+			}
 		}
 
 		private void MoveTopDown(Vector3 input)
@@ -186,6 +194,7 @@ namespace DungeonAutomata._Project.Scripts.GridComponents
 		
 		public void SetPosition(Vector3Int position)
 		{
+			Debug.Log("Setting player position to: " + position);
 			_cellMap = _mapManager.GetCellMap();
 			if (_cellMap != null
 			    && _cellMap[position.x, position.y] != null

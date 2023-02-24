@@ -15,8 +15,8 @@ namespace DungeonAutomata._Project.Scripts.Controllers
     public class FPSGridController : MonoBehaviour
     {
         private Camera _cam;
-        private Player _player;
-        public Vector3Int GridPosition => _currentPosition;
+        private PlayerUnit _player;
+        public Vector3Int CurrentPos => _currentPosition;
         
         [SerializeField] private Grid _grid;
         [SerializeField] private bool isMoving;
@@ -42,6 +42,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
         private void Awake()
         {
             _grid = FindObjectOfType<Grid>();
+            _player = GetComponent<PlayerUnit>();
             _currentPosition = _grid.WorldToCell(transform.position + _centerOffset);
             _currentTarget = _currentPosition;
             currentDirection = Direction.North;
@@ -83,7 +84,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
 
             if (vertical > 0)
             {
-                Debug.Log("Moving Forward using playerUnit interface");
+                //Debug.Log("Moving Forward using playerUnit interface");
                 //StartCoroutine(MovePlayerToCell());
             }
             else if (vertical < 0)
@@ -110,7 +111,7 @@ namespace DungeonAutomata._Project.Scripts.Controllers
         {
             if (_tween.IsPlaying())
             {
-                _tween.Kill();
+                _tween.Complete();
             }
             _tween = transform.DORotate(transform.eulerAngles + rotation, 1 / _turnSpeed, RotateMode.Fast);
             yield return new WaitForSeconds(moveCD);
@@ -134,18 +135,27 @@ namespace DungeonAutomata._Project.Scripts.Controllers
             var cell = Vector3.zero;
             if (CheckCell(cell))
             {
-                _tween = transform.DOMove(_currentTarget + _centerOffset, 1 / _speed, false);
+                var worldPos = new Vector3Int(1, 0, 1);
+                //_currentTarget.z = _currentTarget.y;
+                //_currentTarget.y = 0;
+                //TODO: reimplement
+                _tween = transform.DOMove(_currentTarget * worldPos + _centerOffset, 
+                    1 / _speed, 
+                    false);
                 _currentPosition = _currentTarget;
+                _player.CurrentPos = _currentPosition;
             }
             else
             {
                 _cam.DOShakePosition(strength: 0.1f, duration: .2f, randomness: 45f, vibrato: 45, fadeOut: true);
                 _tween = _cam.transform.DOLocalMove(Vector3.zero, .1f, false);
             }
+
             //_playerUIManager.LogAction.Invoke("Moved to cell " + _currentPosition.x + ", " + _currentPosition.y);
             //_manager.UpdateTurn();
             yield return new WaitForSeconds(moveCD);
         }
+        
         private bool CheckCell(Vector3 cellPos)
         {
             return true;
